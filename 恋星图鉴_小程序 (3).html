@@ -1,0 +1,2163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>恋星图鉴 · Love Constellation</title>
+<style>
+/* ═══════════════════════════════════════
+   CSS Variables & Reset
+   ═══════════════════════════════════════ */
+:root {
+  --purple: #6C5CE7;
+  --pink: #FD79A8;
+  --gold: #FDCB6E;
+  --cyan: #00CEC9;
+  --dark: #2D3436;
+  --light: #636E72;
+  --bg-dark: #0A0A1A;
+  --bg-light: #F8F9FA;
+  --white: #FFFFFF;
+  --fire: #FF6B6B;
+  --earth: #A29BFE;
+  --air: #74B9FF;
+  --water: #81ECEC;
+  --page-max: 480px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-serif;background:var(--bg-dark);color:var(--dark);font-size:13px}
+#app{width:100%;height:100%;max-width:var(--page-max);margin:0 auto;position:relative;overflow:hidden;padding-top:env(safe-area-inset-top)}
+
+/* ═══════════════════════════════════════
+   Star Background
+   ═══════════════════════════════════════ */
+.starfield{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.star{position:absolute;background:#fff;border-radius:50%;animation:twinkle var(--dur) ease-in-out infinite alternate}
+@keyframes twinkle{0%{opacity:.2;transform:scale(.8)}100%{opacity:1;transform:scale(1.2)}}
+
+/* ═══════════════════════════════════════
+   Page System
+   ═══════════════════════════════════════ */
+.page{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;opacity:0;pointer-events:none;transition:opacity .4s ease,transform .4s ease;transform:translateY(20px);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.page.active{opacity:1;pointer-events:auto;transform:translateY(0);z-index:10}
+.page.exit-left{opacity:0;transform:translateX(-60px)}
+.page.exit-right{opacity:0;transform:translateX(60px)}
+
+/* ═══════════════════════════════════════
+   Back Button (Left Bottom)
+   ═══════════════════════════════════════ */
+.back-btn{position:fixed;left:16px;bottom:24px;z-index:100;display:flex;align-items:center;gap:4px;padding:8px 16px;background:rgba(255,255,255,.15);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.2);border-radius:20px;color:rgba(255,255,255,.85);font-size:13px;cursor:pointer;transition:all .25s ease;opacity:0;pointer-events:none;transform:translateY(10px)}
+.back-btn.visible{opacity:1;pointer-events:auto;transform:translateY(0)}
+.back-btn:active{transform:scale(.95);background:rgba(255,255,255,.25)}
+.back-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.back-btn.light-mode{background:rgba(0,0,0,.06);border-color:rgba(0,0,0,.1);color:var(--light)}
+.back-btn.light-mode:active{background:rgba(0,0,0,.12)}
+
+/* ═══════════════════════════════════════
+   Splash Page
+   ═══════════════════════════════════════ */
+#splash{display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg-dark);text-align:center}
+.splash-logo{font-size:42px;font-weight:800;background:linear-gradient(135deg,var(--purple),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:6px;opacity:0;animation:fadeUp .8s .3s ease forwards}
+.splash-sub{font-size:14px;color:rgba(255,255,255,.5);margin-top:12px;letter-spacing:4px;opacity:0;animation:fadeUp .8s .6s ease forwards;font-style:italic}
+.splash-dots{display:flex;gap:8px;margin-top:40px;opacity:0;animation:fadeUp .8s .9s ease forwards}
+.splash-dot{width:6px;height:6px;border-radius:50%;background:var(--purple);animation:pulse 1.2s ease-in-out infinite}
+.splash-dot:nth-child(2){animation-delay:.2s;background:var(--pink)}
+.splash-dot:nth-child(3){animation-delay:.4s;background:var(--gold)}
+@keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.3)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══════════════════════════════════════
+   Home Page
+   ═══════════════════════════════════════ */
+#home{background:linear-gradient(180deg,#0A0A1A 0%,#1a1040 50%,#2d1b69 100%);display:flex;flex-direction:column;align-items:center;padding:60px 24px 40px;text-align:center;min-height:100%}
+.home-deco{font-size:24px;margin-bottom:16px;opacity:0;animation:fadeUp .6s .2s ease forwards}
+.home-title{font-size:32px;font-weight:800;background:linear-gradient(135deg,#fff,var(--purple),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;opacity:0;animation:fadeUp .6s .4s ease forwards;line-height:1.4}
+.home-subtitle{font-size:14px;color:rgba(255,255,255,.6);margin-top:12px;opacity:0;animation:fadeUp .6s .6s ease forwards;line-height:1.6}
+.home-cta{margin-top:48px;opacity:0;animation:fadeUp .6s .8s ease forwards}
+.btn-primary{display:inline-flex;align-items:center;justify-content:center;padding:14px 48px;background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff;font-size:16px;font-weight:600;border:none;border-radius:30px;cursor:pointer;box-shadow:0 4px 20px rgba(108,92,231,.4);transition:all .3s ease;animation:btnGlow 2s ease-in-out infinite}
+.btn-primary:active{transform:scale(.96)}
+@keyframes btnGlow{0%,100%{box-shadow:0 4px 20px rgba(108,92,231,.4)}50%{box-shadow:0 4px 30px rgba(108,92,231,.6),0 0 40px rgba(253,121,168,.2)}}
+.home-features{display:flex;gap:12px;margin-top:40px;opacity:0;animation:fadeUp .6s 1s ease forwards}
+.home-feature{flex:1;padding:16px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:16px;text-align:center}
+.home-feature-icon{font-size:24px;margin-bottom:8px}
+.home-feature-text{font-size:11px;color:rgba(255,255,255,.5);line-height:1.4}
+.home-counter{margin-top:40px;font-size:12px;color:rgba(255,255,255,.3);opacity:0;animation:fadeUp .6s 1.2s ease forwards}
+
+/* ═══════════════════════════════════════
+   Intro Page
+   ═══════════════════════════════════════ */
+#intro{background:var(--bg-light);display:flex;flex-direction:column;align-items:center;padding:60px 28px 100px;min-height:100%}
+.intro-title{font-size:24px;font-weight:700;color:var(--dark);margin-bottom:24px}
+.intro-desc{font-size:14px;color:var(--light);line-height:1.8;text-align:center;margin-bottom:32px}
+.intro-highlights{width:100%;display:flex;flex-direction:column;gap:12px;margin-bottom:40px}
+.intro-highlight{display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.intro-highlight-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.intro-highlight-text{font-size:13px;color:var(--dark);line-height:1.4}
+.intro-highlight-text span{font-weight:600;color:var(--purple)}
+.intro-note{font-size:12px;color:var(--light);margin-bottom:24px;text-align:center}
+.btn-start{padding:14px 56px;background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff;font-size:16px;font-weight:600;border:none;border-radius:30px;cursor:pointer;box-shadow:0 4px 20px rgba(108,92,231,.3);transition:all .3s ease}
+.btn-start:active{transform:scale(.96)}
+.btn-start.locked{opacity:.4;pointer-events:none;filter:grayscale(.5)}
+
+/* ═══ Password ═══ */
+.pwd-section{width:100%;margin-top:20px;padding:20px;background:linear-gradient(135deg,rgba(108,92,231,.06),rgba(253,121,168,.06));border:1px solid rgba(108,92,231,.12);border-radius:16px;text-align:center}
+.pwd-label{font-size:13px;color:var(--light);margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:6px}
+.pwd-input-wrap{display:flex;gap:8px;justify-content:center;align-items:center}
+.pwd-input{width:200px;padding:10px 16px;border:2px solid rgba(108,92,231,.2);border-radius:12px;font-size:18px;font-family:'Courier New',monospace;letter-spacing:4px;text-align:center;background:#fff;color:var(--dark);outline:none;transition:border-color .3s ease}
+.pwd-input:focus{border-color:var(--purple)}
+.pwd-input.error{border-color:var(--fire);animation:pwdShake .4s ease;box-shadow:0 0 0 3px rgba(255,107,107,.15)}
+.pwd-input.success{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,206,201,.15)}
+.pwd-btn{padding:10px 16px;background:var(--purple);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s ease}
+.pwd-btn:active{transform:scale(.95)}
+.pwd-hint{font-size:11px;color:var(--light);margin-top:8px}
+.pwd-status{font-size:12px;margin-top:8px;min-height:18px;transition:all .3s ease}
+.pwd-status.ok{color:var(--cyan)}
+.pwd-status.fail{color:var(--fire)}
+@keyframes pwdShake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+
+/* Admin Panel */
+.admin-trigger{position:fixed;right:12px;bottom:12px;width:28px;height:28px;z-index:200;display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(0,0,0,.08);cursor:pointer;border-radius:50%;transition:all .3s ease;user-select:none}
+.admin-trigger:hover{color:rgba(0,0,0,.15);background:rgba(0,0,0,.03)}
+.admin-panel{position:fixed;top:0;left:0;width:100%;height:100%;z-index:300;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center}
+.admin-panel.show{display:flex}
+.admin-card{width:320px;background:#fff;border-radius:20px;padding:28px 24px;box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center}
+.admin-card-title{font-size:16px;font-weight:700;color:var(--dark);margin-bottom:6px}
+.admin-card-sub{font-size:12px;color:var(--light);margin-bottom:20px}
+.admin-pwd-display{padding:16px;background:linear-gradient(135deg,#f0edff,#fff0f6);border:1px dashed var(--purple);border-radius:14px;margin-bottom:16px}
+.admin-pwd-code{font-size:26px;font-family:'Courier New',monospace;font-weight:800;letter-spacing:6px;color:var(--purple);margin-bottom:4px}
+.admin-pwd-time{font-size:11px;color:var(--light)}
+.admin-pwd-actions{display:flex;gap:8px}
+.admin-pwd-actions button{flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s ease}
+.admin-pwd-actions button:active{transform:scale(.96)}
+.admin-btn-copy{background:var(--purple);color:#fff}
+.admin-btn-refresh{background:rgba(108,92,231,.1);color:var(--purple)}
+.admin-btn-close{width:100%;margin-top:10px;padding:10px;background:rgba(0,0,0,.04);color:var(--light);border:none;border-radius:10px;font-size:13px;cursor:pointer}
+.admin-btn-close:active{background:rgba(0,0,0,.08)}
+.admin-copied{font-size:12px;color:var(--cyan);margin-top:8px;min-height:18px}
+
+/* ═══════════════════════════════════════
+   Quiz Page
+   ═══════════════════════════════════════ */
+#quiz{background:var(--bg-light);display:flex;flex-direction:column;height:100%;overflow:hidden!important}
+.quiz-header{padding:20px 24px 0;flex-shrink:0}
+.quiz-progress-wrap{display:flex;align-items:center;gap:10px;margin-bottom:0}
+.quiz-progress-num{font-size:12px;color:var(--light);white-space:nowrap;text-align:center;min-width:36px}
+.quiz-progress-bar{flex:1;height:3px;background:rgba(108,92,231,.12);border-radius:2px;overflow:hidden}
+.quiz-progress-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--pink));border-radius:2px;transition:width .4s ease;width:0}
+.quiz-body{flex:1;overflow-y:auto;overflow-x:hidden;position:relative;padding:0 24px;-webkit-overflow-scrolling:touch}
+.quiz-slide{position:absolute;top:0;left:0;width:100%;padding:24px 0 20px;transition:transform .35s ease,opacity .35s ease;will-change:transform,opacity;text-align:center}
+.quiz-slide.center{transform:translateX(0);opacity:1}
+.quiz-slide.left{transform:translateX(-110%);opacity:0}
+.quiz-slide.right{transform:translateX(110%);opacity:0}
+.quiz-q-num{font-size:13px;color:var(--purple);font-weight:600;margin-bottom:10px;text-align:center;display:block;letter-spacing:2px}
+.quiz-q-text{font-size:18px;font-weight:600;color:var(--dark);line-height:1.7;margin-bottom:32px;text-align:center;max-width:340px;margin-left:auto;margin-right:auto}
+.quiz-options{display:flex;flex-direction:column;gap:14px;max-width:400px;margin:0 auto}
+.quiz-option{padding:16px 20px;background:#fff;border:2px solid #eee;border-radius:14px;cursor:pointer;transition:all .25s ease;font-size:15px;color:var(--dark);line-height:1.6;position:relative;user-select:none;text-align:center;max-width:360px;margin-left:auto;margin-right:auto}
+.quiz-option:active{transform:scale(.98)}
+.quiz-option.selected{border-color:var(--purple);background:rgba(108,92,231,.04);box-shadow:0 2px 12px rgba(108,92,231,.1)}
+.quiz-option.selected::after{content:'✓';position:absolute;right:16px;top:50%;transform:translateY(-50%);color:var(--purple);font-weight:700;font-size:16px}
+.quiz-footer{width:100%;padding:16px 24px calc(32px + env(safe-area-inset-bottom));display:flex;align-items:center;justify-content:center;gap:12px;background:linear-gradient(transparent,var(--bg-light) 30%);flex-shrink:0}
+.quiz-dots{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;max-width:180px}
+.quiz-dot{width:6px;height:6px;border-radius:50%;background:rgba(108,92,231,.15);transition:all .3s ease}
+.quiz-dot.done{background:var(--purple);transform:scale(1.1)}
+.quiz-dot.current{background:var(--pink);transform:scale(1.3)}
+
+/* ═══════════════════════════════════════
+   Analyzing Page
+   ═══════════════════════════════════════ */
+#analyzing{background:var(--bg-dark);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px}
+.analyzing-orbit{width:160px;height:160px;position:relative;margin-bottom:40px}
+.analyzing-ring{position:absolute;border:1px solid rgba(108,92,231,.2);border-radius:50%;animation:spin linear infinite}
+.analyzing-ring:nth-child(1){width:100%;height:100%;top:0;left:0;animation-duration:8s;border-color:rgba(108,92,231,.3)}
+.analyzing-ring:nth-child(2){width:70%;height:70%;top:15%;left:15%;animation-duration:5s;animation-direction:reverse;border-color:rgba(253,121,168,.3)}
+.analyzing-ring:nth-child(3){width:40%;height:40%;top:30%;left:30%;animation-duration:3s;border-color:rgba(253,203,110,.3)}
+.analyzing-core{position:absolute;width:20px;height:20px;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--purple);border-radius:50%;box-shadow:0 0 20px var(--purple),0 0 40px rgba(108,92,231,.3);animation:corePulse 1.5s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes corePulse{0%,100%{transform:translate(-50%,-50%) scale(1);box-shadow:0 0 20px var(--purple)}50%{transform:translate(-50%,-50%) scale(1.3);box-shadow:0 0 30px var(--purple),0 0 60px rgba(108,92,231,.4)}}
+.analyzing-text{font-size:15px;color:rgba(255,255,255,.6);margin-bottom:12px;min-height:24px;transition:opacity .5s ease}
+.analyzing-result{font-size:28px;font-weight:800;background:linear-gradient(135deg,var(--purple),var(--pink),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;opacity:0;transform:scale(.8);transition:all .6s ease}
+.analyzing-result.show{opacity:1;transform:scale(1)}
+.analyzing-skip{margin-top:32px;font-size:12px;color:rgba(255,255,255,.3);cursor:pointer;padding:8px 16px}
+
+/* ═══════════════════════════════════════
+   Result Page
+   ═══════════════════════════════════════ */
+#result{background:linear-gradient(180deg,#0A0A1A 0%,#1a1040 40%,#2d1b69 100%);min-height:100%;padding-bottom:80px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.result-hero{padding:40px 24px 24px;text-align:center;position:relative}
+.result-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:20px;font-size:12px;color:rgba(255,255,255,.6);margin-bottom:16px}
+.result-name{font-size:36px;font-weight:800;background:linear-gradient(135deg,#fff,var(--purple),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;line-height:1.3}
+.result-zodiac{font-size:16px;color:var(--gold);margin-bottom:12px}
+.result-motto{font-size:14px;color:rgba(255,255,255,.5);font-style:italic;line-height:1.6;max-width:300px;margin:0 auto}
+.result-element{display:inline-block;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;margin-top:12px}
+
+/* Radar Chart */
+.result-radar{padding:20px 24px;display:flex;justify-content:center}
+.result-radar canvas{max-width:280px;max-height:280px}
+
+/* Tabs */
+.result-tabs{display:flex;padding:0 24px;gap:0;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.result-tab{flex:1;padding:10px 4px;text-align:center;font-size:13px;color:rgba(255,255,255,.4);cursor:pointer;border-bottom:2px solid transparent;transition:all .3s ease}
+.result-tab.active{color:var(--pink);border-bottom-color:var(--pink)}
+.result-tab-content{padding:0 24px;display:none}
+.result-tab-content.active{display:block}
+.result-section{margin-bottom:20px}
+.result-section-title{font-size:14px;font-weight:600;color:rgba(255,255,255,.7);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.result-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;margin-bottom:10px}
+.result-card-title{font-size:13px;font-weight:600;color:var(--purple);margin-bottom:6px}
+.result-card-text{font-size:13px;color:rgba(255,255,255,.6);line-height:1.7}
+.result-card-text strong{color:rgba(255,255,255,.85)}
+
+/* Fun Section */
+.result-fun{background:rgba(253,121,168,.06);border:1px solid rgba(253,121,168,.12);border-radius:16px;padding:20px;margin:16px 24px;text-align:center}
+.result-fun-title{font-size:15px;font-weight:700;color:var(--pink);margin-bottom:12px}
+.result-fun-recipe{font-size:13px;color:rgba(255,255,255,.6);line-height:1.8}
+.result-fun-recipe span{color:var(--gold);font-weight:600}
+
+/* Match Section */
+.result-match{padding:0 24px;margin:20px 0}
+.result-match-item{display:flex;align-items:center;gap:14px;padding:14px;background:rgba(255,255,255,.04);border-radius:14px;margin-bottom:10px;border:1px solid rgba(255,255,255,.06)}
+.result-match-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.result-match-info{flex:1}
+.result-match-label{font-size:11px;color:rgba(255,255,255,.4);margin-bottom:2px}
+.result-match-name{font-size:14px;font-weight:600;color:rgba(255,255,255,.85)}
+.result-match-desc{font-size:12px;color:rgba(255,255,255,.45);margin-top:2px}
+.result-match-score{font-size:20px;font-weight:800;flex-shrink:0}
+
+/* Bottom Actions */
+.result-actions{padding:24px;padding-bottom:calc(24px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px;align-items:center}
+.btn-share{width:100%;padding:14px;background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff;font-size:15px;font-weight:600;border:none;border-radius:14px;cursor:pointer;box-shadow:0 4px 16px rgba(108,92,231,.3)}
+.btn-share:active{transform:scale(.97)}
+.btn-secondary{width:100%;padding:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);font-size:14px;border-radius:14px;cursor:pointer}
+.btn-secondary:active{transform:scale(.97);background:rgba(255,255,255,.1)}
+
+/* ═══════════════════════════════════════
+   Result Detail Sections
+   ═══════════════════════════════════════ */
+.result-detail-section{padding:0 24px;margin-bottom:8px}
+.result-detail-title{font-size:15px;font-weight:700;color:rgba(255,255,255,.85);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.result-timeline{position:relative;padding-left:20px;border-left:2px solid rgba(108,92,231,.2)}
+.result-timeline-item{position:relative;padding:0 0 16px 16px}
+.result-timeline-item::before{content:'';position:absolute;left:-25px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--purple);border:2px solid var(--bg-dark)}
+.result-timeline-item:nth-child(2)::before{background:var(--pink)}
+.result-timeline-item:nth-child(3)::before{background:var(--gold)}
+.result-timeline-item:nth-child(4)::before{background:var(--cyan)}
+.result-timeline-label{font-size:11px;color:var(--purple);font-weight:600;margin-bottom:2px}
+.result-timeline-text{font-size:13px;color:rgba(255,255,255,.6);line-height:1.6}
+.result-scene{display:flex;gap:12px;padding:14px;background:rgba(255,255,255,.04);border-radius:12px;margin-bottom:8px;border:1px solid rgba(255,255,255,.06)}
+.result-scene-icon{font-size:28px;flex-shrink:0}
+.result-scene-content{flex:1}
+.result-scene-title{font-size:13px;font-weight:600;color:rgba(255,255,255,.8);margin-bottom:4px}
+.result-scene-text{font-size:12px;color:rgba(255,255,255,.5);line-height:1.6}
+.result-scene-dialog{font-size:12px;color:var(--pink);font-style:italic;margin-top:6px;padding:8px 12px;background:rgba(253,121,168,.06);border-radius:8px;border-left:2px solid var(--pink)}
+.result-minefield{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:rgba(255,107,107,.04);border:1px solid rgba(255,107,107,.1);border-radius:12px;margin-bottom:8px}
+.result-minefield-icon{font-size:20px;flex-shrink:0;margin-top:1px}
+.result-minefield-text{font-size:12px;color:rgba(255,255,255,.6);line-height:1.6}
+.result-minefield-text strong{color:rgba(255,255,255,.85)}
+.result-date-card{padding:16px;background:rgba(253,203,110,.04);border:1px solid rgba(253,203,110,.1);border-radius:14px;margin-bottom:10px}
+.result-date-title{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:6px}
+.result-date-text{font-size:13px;color:rgba(255,255,255,.6);line-height:1.7}
+.result-guide-card{padding:14px;background:rgba(0,206,201,.04);border:1px solid rgba(0,206,201,.1);border-radius:12px;margin-bottom:8px}
+.result-guide-title{font-size:13px;font-weight:600;color:var(--cyan);margin-bottom:4px}
+.result-guide-text{font-size:12px;color:rgba(255,255,255,.55);line-height:1.6}
+.result-song{display:flex;align-items:center;gap:14px;padding:16px;background:rgba(108,92,231,.06);border:1px solid rgba(108,92,231,.12);border-radius:14px}
+.result-song-icon{font-size:32px}
+.result-song-info{flex:1}
+.result-song-name{font-size:14px;font-weight:600;color:rgba(255,255,255,.85)}
+.result-song-artist{font-size:12px;color:rgba(255,255,255,.45);margin-top:2px}
+.result-song-reason{font-size:12px;color:rgba(255,255,255,.5);margin-top:6px;font-style:italic}
+.result-divider{height:1px;background:rgba(255,255,255,.06);margin:20px 24px}
+
+/* ═══════════════════════════════════════
+   Animations
+   ═══════════════════════════════════════ */
+.fade-in{animation:fadeIn .5s ease forwards}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.stagger>*{opacity:0;animation:fadeIn .4s ease forwards}
+.stagger>*:nth-child(1){animation-delay:.1s}
+.stagger>*:nth-child(2){animation-delay:.2s}
+.stagger>*:nth-child(3){animation-delay:.3s}
+.stagger>*:nth-child(4){animation-delay:.4s}
+.stagger>*:nth-child(5){animation-delay:.5s}
+.stagger>*:nth-child(6){animation-delay:.6s}
+.stagger>*:nth-child(7){animation-delay:.7s}
+.stagger>*:nth-child(8){animation-delay:.8s}
+
+/* ═══════════════════════════════════════
+   Responsive
+   ═══════════════════════════════════════ */
+
+/* ═══ Share Modal ═══ */
+.share-modal{position:fixed;top:0;left:0;width:100%;height:100%;z-index:400;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;align-items:flex-end;justify-content:center}
+.share-modal.show{display:flex}
+.share-modal-content{width:100%;max-width:480px;background:#fff;border-radius:20px 20px 0 0;padding:24px 24px calc(24px + env(safe-area-inset-bottom));animation:shareSlideUp .3s ease}
+@keyframes shareSlideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.share-modal-title{font-size:18px;font-weight:700;color:var(--dark);text-align:center;margin-bottom:16px}
+.share-modal-personality{text-align:center;margin-bottom:20px;padding:12px;background:linear-gradient(135deg,rgba(108,92,231,.06),rgba(253,121,168,.06));border-radius:12px}
+.share-modal-personality .sp-name{font-size:16px;font-weight:700;color:var(--purple)}
+.share-modal-personality .sp-zodiac{font-size:13px;color:var(--light);margin-top:4px}
+.share-modal-options{display:flex;gap:12px;margin-bottom:20px}
+.share-option-card{flex:1;padding:20px 12px;background:var(--bg-light);border-radius:16px;text-align:center;cursor:pointer;transition:all .2s ease;border:2px solid transparent}
+.share-option-card:active{transform:scale(.96);border-color:var(--purple)}
+.share-option-icon{font-size:32px;margin-bottom:8px}
+.share-option-label{font-size:15px;font-weight:600;color:var(--dark);margin-bottom:4px}
+.share-option-desc{font-size:12px;color:var(--light)}
+.share-modal-close{width:100%;padding:12px;background:rgba(0,0,0,.04);color:var(--light);border:none;border-radius:12px;font-size:14px;cursor:pointer}
+.share-modal-close:active{background:rgba(0,0,0,.08)}
+
+/* QR Card Modal */
+.qr-modal{position:fixed;top:0;left:0;width:100%;height:100%;z-index:500;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:24px}
+.qr-modal.show{display:flex}
+.qr-card{width:280px;background:#fff;border-radius:20px;padding:24px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.qr-card-header{margin-bottom:16px}
+.qr-card-app{font-size:14px;font-weight:600;color:var(--dark)}
+.qr-card-personality{font-size:20px;font-weight:800;background:linear-gradient(135deg,var(--purple),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-top:4px}
+.qr-card-zodiac{font-size:13px;color:var(--light);margin-top:2px}
+.qr-card-canvas{margin:16px auto;display:block;border-radius:12px}
+.qr-card-tip{font-size:12px;color:var(--light);margin-top:12px;line-height:1.5}
+.qr-card-actions{display:flex;gap:8px;margin-top:16px}
+.qr-card-actions button{flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none}
+.qr-card-actions button:active{transform:scale(.96)}
+.qr-btn-save{background:var(--purple);color:#fff}
+.qr-btn-close-qr{background:rgba(0,0,0,.06);color:var(--light)}
+@media(min-width:481px){
+  #app{border-left:1px solid rgba(255,255,255,.05);border-right:1px solid rgba(255,255,255,.05)}
+}
+</style>
+</head>
+<body>
+<div class="starfield" id="starfield"></div>
+<div id="app">
+
+  <!-- ═══ Splash ═══ -->
+  <div class="page active" id="splash">
+    <div class="splash-logo">恋星图鉴</div>
+    <div class="splash-sub">Love Constellation</div>
+    <div class="splash-dots"><div class="splash-dot"></div><div class="splash-dot"></div><div class="splash-dot"></div></div>
+  </div>
+
+  <!-- ═══ Home ═══ -->
+  <div class="page" id="home">
+    <div class="home-deco">✦ ✦ ✦</div>
+    <div class="home-title">发现你的<br>恋爱星轨</div>
+    <div class="home-subtitle">12种恋轨人格 · 星座深度关联<br>解码你的爱情密码</div>
+    <div class="home-cta"><button class="btn-primary" onclick="goTo('intro')">开始测试</button></div>
+    <div class="home-features">
+      <div class="home-feature"><div class="home-feature-icon">🌟</div><div class="home-feature-text">星座关联<br>深度分析</div></div>
+      <div class="home-feature"><div class="home-feature-icon">💫</div><div class="home-feature-text">专属星轨<br>可视化图</div></div>
+      <div class="home-feature"><div class="home-feature-icon">💕</div><div class="home-feature-text">恋爱配对<br>契合报告</div></div>
+    </div>
+    <div class="home-counter" id="adminTrigger" style="cursor:pointer;-webkit-user-select:none;user-select:none">已有 <span id="counter">128,936</span> 人发现恋轨</div>
+  </div>
+
+  <!-- ═══ Intro ═══ -->
+  <div class="page" id="intro">
+    <div class="intro-title">在开始之前...</div>
+    <div class="intro-desc">15道题 · 3分钟<br>发现你的专属恋爱人格<br><br>你的回答没有对错之分<br>跟随直觉选择即可 ✨</div>
+    <div class="intro-highlights stagger">
+      <div class="intro-highlight"><div class="intro-highlight-icon" style="background:rgba(108,92,231,.1)">⭐</div><div class="intro-highlight-text"><span>星座关联分析</span><br>守护星座 + 能量星座双重解读</div></div>
+      <div class="intro-highlight"><div class="intro-highlight-icon" style="background:rgba(253,121,168,.1)">🔮</div><div class="intro-highlight-text"><span>专属星轨图</span><br>可视化你的恋爱维度分布</div></div>
+      <div class="intro-highlight"><div class="intro-highlight-icon" style="background:rgba(253,203,110,.1)">💞</div><div class="intro-highlight-text"><span>深度配对报告</span><br>发现谁是你命中注定的那个人</div></div>
+    </div>
+    <div class="intro-note">测试过程中可随时返回上一题修改答案</div>
+    <div class="pwd-section">
+      <div class="pwd-label">🔐 请输入流动密码解锁测试</div>
+      <div class="pwd-input-wrap">
+        <input class="pwd-input" id="pwdInput" type="password" maxlength="10" placeholder="· · · · · ·" autocomplete="off">
+        <button class="pwd-btn" onclick="verifyPassword()">解锁</button>
+      </div>
+      <div class="pwd-hint">密码由管理员提供，每次更新后自动失效</div>
+      <div class="pwd-status" id="pwdStatus"></div>
+    </div>
+    <button class="btn-start locked" id="startBtn" onclick="startQuiz()">准备好了 ✦</button>
+  </div>
+
+  <!-- ═══ Quiz ═══ -->
+  <div class="page" id="quiz">
+    <div class="quiz-header">
+      <div class="quiz-progress-wrap">
+        <span class="quiz-progress-num" id="qNum">1/15</span>
+        <div class="quiz-progress-bar"><div class="quiz-progress-fill" id="qBar"></div></div>
+      </div>
+    </div>
+    <div class="quiz-body" id="quizBody"></div>
+    <div class="quiz-footer">
+      <button class="back-btn light-mode" id="quizBack" style="position:static;opacity:1;pointer-events:auto;transform:none;padding:8px 14px;font-size:12px" onclick="prevQuestion()">
+        <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>上一题
+      </button>
+      <div class="quiz-dots" id="qDots"></div>
+      <button class="btn-primary" id="qNext" style="padding:10px 28px;font-size:14px;opacity:.5;pointer-events:none" onclick="nextQuestion()">下一题</button>
+    </div>
+  </div>
+
+  <!-- ═══ Analyzing ═══ -->
+  <div class="page" id="analyzing">
+    <div class="analyzing-orbit">
+      <div class="analyzing-ring"></div>
+      <div class="analyzing-ring"></div>
+      <div class="analyzing-ring"></div>
+      <div class="analyzing-core"></div>
+    </div>
+    <div class="analyzing-text" id="analyzeText">正在解读你的星轨...</div>
+    <div class="analyzing-result" id="analyzeResult"></div>
+    <div class="analyzing-skip" onclick="skipAnalyze()">跳过动画 ›</div>
+  </div>
+
+  <!-- ═══ Result ═══ -->
+  <div class="page" id="result">
+    <div class="result-hero" id="resultHero"></div>
+    <div class="result-radar"><canvas id="radarCanvas" width="280" height="280"></canvas></div>
+    <div class="result-tabs" id="resultTabs"></div>
+    <div id="resultContent"></div>
+    <div class="result-fun" id="resultFun"></div>
+    <div class="result-match" id="resultMatch"></div>
+    <div class="result-actions">
+      <button class="btn-share" onclick="shareResult()">🔗 分享我的恋轨人格</button>
+      <button class="btn-secondary" onclick="goTo('home')">🏠 返回首页</button>
+    </div>
+  </div>
+</div>
+
+<!-- Global Back Button -->
+<button class="back-btn" id="globalBack" onclick="goBack()">
+  <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>返回
+</button>
+
+<!-- Admin Panel -->
+<div class="admin-panel" id="adminPanel" onclick="if(event.target===this)closeAdmin()">
+  <div class="admin-card">
+    <div class="admin-card-title">🔐 流动密码管理</div>
+    <div class="admin-card-sub">当前有效密码（用户需输入此密码解锁测试）</div>
+    <div class="admin-pwd-display">
+      <div class="admin-pwd-code" id="adminPwdCode"></div>
+      <div class="admin-pwd-time" id="adminPwdTime"></div>
+    </div>
+    <div class="admin-pwd-actions">
+      <button class="admin-btn-copy" onclick="copyAdminPwd()">📋 复制密码</button>
+      <button class="admin-btn-refresh" onclick="refreshPassword()">🔄 换一个</button>
+    </div>
+    <div class="admin-copied" id="adminCopied"></div>
+    <button class="admin-btn-close" onclick="closeAdmin()">关闭</button>
+  </div>
+</div>
+
+<div class="share-modal" id="shareModal" onclick="if(event.target===this)closeShareModal()">
+  <div class="share-modal-content">
+    <div class="share-modal-title">分享我的恋轨人格</div>
+    <div class="share-modal-personality" id="sharePersonality"></div>
+    <div class="share-modal-options">
+      <div class="share-option-card" onclick="shareByLink()">
+        <div class="share-option-icon">🔗</div>
+        <div class="share-option-label">分享链接</div>
+        <div class="share-option-desc">复制链接发送给好友</div>
+      </div>
+      <div class="share-option-card" onclick="shareByQR()">
+        <div class="share-option-icon">📱</div>
+        <div class="share-option-label">二维码名片</div>
+        <div class="share-option-desc">生成专属二维码图片</div>
+      </div>
+    </div>
+    <button class="share-modal-close" onclick="closeShareModal()">取消</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════
+const ZODIAC_ICONS = ['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'];
+const ELEMENT_COLORS = {fire:'#FF6B6B',earth:'#A29BFE',air:'#74B9FF',water:'#81ECEC'};
+const ELEMENT_NAMES = {fire:'火象',earth:'土象',air:'风象',water:'水象'};
+
+const questions = [
+  // 情感温度 (1-3)
+  {dim:'temp',q:'约会时，对方突然握住你的手，你的第一反应是——',a:'心跳加速，自然地回握，甚至想靠得更近',b:'微微一愣，但不会抽开，只是默默享受这一刻'},
+  {dim:'temp',q:'恋爱中，你更享受哪种表达爱的方式？',a:'热烈的告白、拥抱、亲吻——身体语言最真实',b:'一起做顿饭、帮忙修好东西——行动比语言更有力'},
+  {dim:'temp',q:'深夜收到伴侣的一条"想你了"，你会——',a:'立刻回复"我也想你！"然后打视频过去',b:'嘴角上扬，回复一个温暖的表情包，心里暖暖的'},
+  // 关系节奏 (4-6)
+  {dim:'pace',q:'你们刚认识两周，对方说"我觉得我们很合拍"，你会——',a:'顺势回应"我也这么觉得！"然后开始规划下次约会',b:'礼貌微笑，心想"再观察观察吧，不急"'},
+  {dim:'pace',q:'你认为一段感情多久可以确定关系？',a:'感觉对了就在一起，不需要设定时间表',b:'至少要深入了解几个月，确定三观契合再决定'},
+  {dim:'pace',q:'第一次约会结束，对方没有立刻发消息，你会——',a:'主动发消息"今天很开心！"不想错过信号',b:'不急，等对方先来，给彼此一些空间'},
+  // 冲突模式 (7-9)
+  {dim:'conflict',q:'和伴侣因为一件小事吵了起来，你会——',a:'当场把话说清楚，就算声音大点也要立刻解决',b:'先冷静一下，等情绪平复了再找个合适时机聊'},
+  {dim:'conflict',q:'吵架后对方冷战不说话，你的做法是——',a:'受不了冷战，主动去沟通"我们谈谈吧"',b:'给彼此时间冷静，等对方准备好了再说'},
+  {dim:'conflict',q:'你觉得"道歉"这件事——',a:'谁错了谁就道歉，简单直接，不丢人',b:'道歉需要台阶，有时候一个拥抱比一句"对不起"更有效'},
+  // 独处需求 (10-12)
+  {dim:'solitude',q:'周末没有安排，伴侣说"今天一整天都在一起吧"，你的想法是——',a:'太好了！一整天黏在一起简直完美',b:'嗯...能不能上午在一起，下午我有点自己的事想处理'},
+  {dim:'solitude',q:'伴侣想看你的手机，你的反应是——',a:'随便看啊，我没什么不能让对方知道的',b:'心里会有一丝不舒服，虽然没秘密但这是边界感'},
+  {dim:'solitude',q:'恋爱后，你对"独处时间"的需求是——',a:'恋爱就是想在一起啊，独处什么的以后再说',b:'再亲密的关系也需要保持自我，独处让我充电'},
+  // 星座关联 (13-15)
+  {dim:'zodiac1',q:'你觉得自己更接近哪种"爱的元素"？',a:'烈焰（热烈主动）或 疾风（自由灵动）',b:'大地（沉稳踏实）或 深海（温柔深沉）'},
+  {dim:'zodiac2',q:'如果用一个词形容你理想中的爱情，会是？',a:'激情、冒险、轰轰烈烈',b:'安稳、默契、细水长流'},
+  {dim:'zodiac3',q:'你更相信哪种恋爱观？',a:'爱要勇敢表达，错过比失败更遗憾',b:'好的爱情是细水长流，经得起时间考验'},
+];
+
+const personalities = [
+  {
+    id:0, name:'炽焰追光者', zodiac:'白羊座', zodiacIdx:0, element:'fire',
+    energy:'狮子座', motto:'爱就要轰轰烈烈，像火焰一样燃烧',
+    scores:{temp:90,pace:85,conflict:80,solitude:25},
+    strengths:[
+      {title:'天生的行动派',desc:'你不会让爱停留在"想"的阶段。当你认定一个人，整个宇宙都会为你让路。你的伴侣永远不需要猜"TA到底爱不爱我"，因为你的行动就是最好的答案。'},
+      {title:'极致的浪漫主义',desc:'你眼中的爱情自带滤镜和配乐。一场精心策划的惊喜、一次说走就走的旅行、一句深夜的告白——这些都是你的拿手好戏。'},
+      {title:'忠诚的守护者',desc:'虽然你看起来热情似火，但一旦真正爱上，你就是最忠诚的伴侣。你的爱像火焰一样，一旦点燃就不会轻易熄灭。'}
+    ],
+    blindspots:[
+      {title:'冲动是魔鬼',desc:'你在爱情中的最大敌人是自己的急躁。还没了解对方就开始规划未来，刚吵完架就想立刻解决——有时候慢下来，反而能走得更远。'},
+      {title:'占有欲过强',desc:'你把伴侣当作"自己的人"，这种强烈的归属感虽然甜蜜，但也可能让对方感到窒息。学会给爱留一点呼吸的空间。'},
+      {title:'三分钟热度风险',desc:'你的热情来得快，但要注意维持。爱情不是一场冲刺，而是一场马拉松。当新鲜感褪去，真正的爱才刚刚开始。'}
+    ],
+    growth:[
+      '学会"延迟满足"——在做出重大恋爱决定前，给自己24小时的冷静期',
+      '培养倾听的习惯——不要只顾着表达自己，也认真听听伴侣的心声',
+      '给伴侣空间——爱不是占有，而是让彼此都能做最好的自己',
+      '控制情绪节奏——吵架时数到10再开口，你会发现世界大不一样'
+    ],
+    loveLang:'你的主导爱语是<strong>身体接触</strong>和<strong>肯定言语</strong>。一个拥抱胜过千言万语，一句"你真棒"能让你开心一整天。',
+    match:{best:{name:'月汐倾听者',score:95,desc:'火与水的完美融合，你的热情被TA的温柔包容'},challenge:{name:'深渊凝望者',score:60,desc:'两个强烈的灵魂碰撞，需要极大的包容和信任'},secret:{name:'晨露漫游者',score:82,desc:'意想不到的化学反应，你让TA想安定，TA让你更灵活'}},
+    hidden:'在炽热的外表下，你藏着一颗极其柔软的心。深夜独处时，你会反复回味伴侣说过的每一句温柔的话。你不是不害怕受伤，只是你选择了勇敢。',
+    recipe:'<span>3份</span>热情 + <span>2份</span>勇气 + <span>1份</span>耐心 + <span>少许</span>温柔 = 完美的炽焰追光者',
+    mantra:'「我值得被热烈地爱，也值得被温柔地待。」',
+    season:'本月星轨提示：你的魅力值飙升，但要注意不要因为太着急而吓跑心仪对象。让子弹飞一会儿，好事多磨。',
+    timeline:[
+      {label:'心动瞬间',text:'你在人群中一眼看到TA，心跳漏了一拍。没有犹豫，你直接走过去说"你好，我觉得你很特别。"'},
+      {label:'暧昧期',text:'你每天给TA发消息，从早安到晚安，话题永远不缺。你会制造各种"偶遇"，只为了多看TA一眼。'},
+      {label:'热恋期',text:'你们像两团火焰合为一体，燃烧得整个世界都亮了。你恨不得向全世界宣告"这个人是我的人！"'},
+      {label:'稳定期',text:'你的热情从"火山喷发"变成了"恒温供暖"。你学会了在激情和平淡之间找到平衡，偶尔的惊喜让爱情保持新鲜。'}
+    ],
+    scenes:[
+      {icon:'🌅',title:'早安轰炸',text:'每天早上7点准时发来消息，附带一张今天的穿搭照片问"好看吗？"',dialog:'"早安！今天天气超好，想你了，中午一起吃饭吗？对了你昨晚睡得好吗？"——信息密度堪比小作文'},
+      {icon:'🌙',title:'深夜告白',text:'忍了一整天的话，终于在深夜全部倒出来',dialog:'"其实我今天一直在想一件事...就是...你能不能做我男朋友/女朋友？等一下你别急着回答，让我把话说完——"'},
+      {icon:'🔥',title:'吵架现场',text:'吵完架5分钟后就后悔了，但面子不让步',dialog:'"我不是生气！我只是...算了！...那个...你饿不饿？我点了你爱吃的外卖。"——嘴硬心软第一名'}
+    ],
+    minefields:[
+      {icon:'💣',text:'<strong>已读不回超过2小时</strong>：你的脑补能力会自动生成800字小作文，越想越焦虑'},
+      {icon:'⚠️',text:'<strong>TA和异性朋友单独出去</strong>：理智告诉你应该信任，但心里的小火苗已经快把理智烧光了'},
+      {icon:'🚫',text:'<strong>被说"你太冲动了"</strong>：这句话比你想象的更伤人，因为你在努力控制自己'}
+    ],
+    idealDate:{title:'🔥 烈焰主题约会', desc:'白天：一起去攀岩馆挑战极限，在肾上腺素飙升时牵手。傍晚：驱车去山顶看日落，准备一封手写信在夕阳下读给TA听。夜晚：在篝火旁分享彼此的梦想，用星空做背景拍一张合照。'},
+    song:{name:'喜欢你',artist:'G.E.M.邓紫棋',reason:'热烈而直接，像你一样——喜欢就要大声说出来，藏不住也懒得藏。'},
+    partnerGuide:[
+      {title:'给你的行动指南',text:'TA需要你明确的回应和主动的靠近。不要让TA猜，直接告诉TA你的感受。'},
+      {title:'如何哄TA开心',text:'一个拥抱比一万句解释管用。吵架后主动靠近，TA的"气"会瞬间消散大半。'},
+      {title:'TA的小心思',text:'TA嘴上说"没事"，其实是"有事但不好意思说"。请多问一句"你确定没事吗？"。'}
+    ]
+  },
+  {
+    id:1, name:'繁花筑梦师', zodiac:'金牛座', zodiacIdx:1, element:'earth',
+    energy:'处女座', motto:'最好的爱情，是用心浇灌出的花园',
+    scores:{temp:55,pace:25,conflict:30,solitude:70},
+    strengths:[
+      {title:'最可靠的伴侣',desc:'你说到做到，承诺就是承诺。在这个善变的时代，你的稳定和可靠是伴侣最大的安全感来源。和你在一起，就像有了一座永远不会倒塌的城堡。'},
+      {title:'生活美学家',desc:'你擅长把平凡的日子过成诗。一顿精心准备的晚餐、一个布置温馨的家、一次细节满满的约会——你用行动诠释"爱在日常"。'},
+      {title:'持久的深情',desc:'你的爱不会随着时间消退，反而会越来越深。你是最擅长"长期主义"的恋人，岁月只会让你的感情更加醇厚。'}
+    ],
+    blindspots:[
+      {title:'固执如牛',desc:'一旦你认定了某件事，十头牛都拉不回来。在恋爱中，这种固执可能让你错过更好的解决方案。学会灵活变通，爱情不是一条直线。'},
+      {title:'不善表达',desc:'你心里有一万句"我爱你"，但说出口的可能只有一句。你的伴侣有时候真的需要听到你说出来，而不是只能靠猜。'},
+      {title:'物质安全感执念',desc:'你对物质安全感的追求有时会超过情感需求。记住，最好的礼物不是最贵的，而是最用心的。'}
+    ],
+    growth:[
+      '练习"每日一句情话"——哪怕只是"今天也很想你"这样简单的话',
+      '拥抱变化——偶尔打破常规，给恋爱制造一些小惊喜',
+      '学会表达脆弱——向伴侣展示你的柔软面，这不会让你变弱',
+      '放下控制欲——不是所有事情都需要按你的方式来'
+    ],
+    loveLang:'你的主导爱语是<strong>服务行动</strong>和<strong>礼物</strong>。你用行动表达爱，也最容易被对方的用心行动打动。',
+    match:{best:{name:'晨露漫游者',score:93,desc:'稳重与灵动的完美互补，你给TA安定的家，TA给你新鲜的空气'},challenge:{name:'炽焰追光者',score:58,desc:'节奏差异较大，需要双方都做出调整'},secret:{name:'深渊凝望者',score:85,desc:'两个深情灵魂的共鸣，默契度超乎想象'}},
+    hidden:'在务实的表面下，你其实是一个浪漫到骨子里的人。你会在深夜偷偷看爱情电影然后哭得稀里哗啦，但你绝对不会承认。',
+    recipe:'<span>3份</span>踏实 + <span>2份</span>用心 + <span>1份</span>浪漫 + <span>少许</span>冒险 = 完美的繁花筑梦师',
+    mantra:'「慢慢来，比较快。好的爱情值得等待。」',
+    season:'本月星轨提示：财运和桃花运双丰收！你的稳重和细心会吸引到欣赏你的人，保持真实的自己就好。',
+    timeline:[
+      {label:'心动瞬间',text:'不是一见钟情，而是在某个平凡的瞬间——TA帮你捡起掉落的东西，你抬头看到TA温暖的笑容，心里某个角落突然亮了。'},
+      {label:'暧昧期',text:'你不会急着表白，而是默默观察。TA喜欢什么咖啡、什么电影、什么季节——你都记在心里，等待最完美的时机。'},
+      {label:'热恋期',text:'你的爱像一座精心打理的花园，每一天都在悄悄绽放。你为TA做的早餐、整理的书架、准备的惊喜，都是爱的证据。'},
+      {label:'稳定期',text:'你们的感情像陈年红酒，越久越醇。你们有了只属于两个人的默契和仪式感，每一天都安稳而美好。'}
+    ],
+    scenes:[
+      {icon:'🌅',title:'默默准备',text:'提前一周开始策划约会，从餐厅预订到路线规划全部安排妥当',dialog:'"那个...周六有空吗？我发现了一家新开的日料店，听说刺身特别新鲜，而且离你喜欢的那个书店很近..."——表面随意，实则准备了三天'},
+      {icon:'🌙',title:'深夜厨房',text:'TA加班回来很晚，你默默热好饭菜等在餐桌旁',dialog:'"不急，慢慢吃。汤有点凉了我去热一下。对了，今天工作累不累？"——不善言辞，但每个细节都是爱'},
+      {icon:'🔥',title:'冷战现场',text:'生闷气但不说话，用行动表达不满——把TA的杯子放得很远',dialog:'"......"（沉默中把洗好的水果放在TA面前，然后转身离开。TA追上来问怎么了，你才委屈地说"你昨天都没跟我说晚安"）'}
+    ],
+    minefields:[
+      {icon:'💣',text:'<strong>计划被打乱</strong>：你精心安排的约会突然被取消，内心的失落感会持续很久'},
+      {icon:'⚠️',text:'<strong>TA忘记重要日期</strong>：你记得TA所有的纪念日，但TA忘了你的——这种不对等会让你非常受伤'},
+      {icon:'🚫',text:'<strong>被说"你太无趣了"</strong>：你不是无趣，你只是把浪漫藏在了细节里。这句话会严重打击你'}
+    ],
+    idealDate:{title:'🌸 花园主题约会', desc:'上午：一起去花市挑选鲜花，为家里添一抹色彩。午后：在安静的咖啡馆里各自看书，偶尔抬头对视一笑。傍晚：一起下厨做一顿丰盛的晚餐，用TA喜欢的食材。夜晚：窝在沙发上一起看一部老电影，享受属于你们的慢时光。'},
+    song:{name:'慢慢喜欢你',artist:'莫文蔚',reason:'温柔而坚定，像你一样——不急不躁，用时间证明爱的深度。'},
+    partnerGuide:[
+      {title:'给你的行动指南',text:'TA的爱藏在行动里。注意那些被默默做好的小事，那就是TA在说"我爱你"。'},
+      {title:'如何哄TA开心',text:'一封手写的感谢信比任何礼物都管用。告诉TA"谢谢你一直以来的用心"。'},
+      {title:'TA的小心思',text:'TA嘴上说"不用给我准备礼物"，但收到礼物时眼睛会亮起来。请偷偷准备。'}
+    ]
+  },
+  {
+    id:2, name:'晨露漫游者', zodiac:'双子座', zodiacIdx:2, element:'air',
+    energy:'水瓶座', motto:'爱情是一场永不落幕的冒险',
+    scores:{temp:65,pace:80,conflict:60,solitude:75},
+    strengths:[
+      {title:'永远的有趣灵魂',desc:'和你在一起永远不会无聊。你总有说不完的话题、讲不完的故事、想不完的点子。你的伴侣会觉得每一天都在认识一个全新的你。'},
+      {title:'超强的沟通力',desc:'你是天生的沟通大师，能轻松化解尴尬、调节气氛。在恋爱中，你擅长用幽默和智慧让关系保持轻松愉快。'},
+      {title:'尊重伴侣独立性',desc:'你不会把伴侣绑在身边，而是鼓励TA做最好的自己。你深知最好的爱情是两个独立灵魂的相互吸引。'}
+    ],
+    blindspots:[
+      {title:'承诺恐惧症',desc:'"永远"这个词让你有点害怕。你害怕被束缚，害怕失去自由。但真正的承诺不是牢笼，而是两个人一起飞翔的翅膀。'},
+      {title:'三心二意的误解',desc:'你对所有人都很友好，这容易让伴侣感到不安。学会在友情和爱情之间划一条清晰的线。'},
+      {title:'深度不够',desc:'你擅长浅层社交，但在需要深入沟通时可能会退缩。爱情不仅需要有趣的对话，也需要真诚的交心。'}
+    ],
+    growth:[
+      '练习深度对话——每周和伴侣进行一次"真心话时间"',
+      '给伴侣安全感——主动分享你的行踪和想法，减少TA的不安',
+      '学会说"我选择你"——这句话比任何甜言蜜语都更有力量',
+      '不要逃避严肃话题——面对问题比逃避问题更需要勇气'
+    ],
+    loveLang:'你的主导爱语是<strong>高质量陪伴</strong>和<strong>肯定言语</strong>。你需要的是有趣的对话和被理解的满足感。',
+    match:{best:{name:'繁花筑梦师',score:93,desc:'你给TA自由中的浪漫，TA给你漂泊中的归属'},challenge:{name:'琥珀封存者',score:55,desc:'节奏和价值观差异较大，需要大量磨合'},secret:{name:'炽焰追光者',score:80,desc:'两个火象灵魂的碰撞，激情四射但需要降温机制'}},
+    hidden:'你看起来无忧无虑，其实内心深处极度渴望被真正理解。你不是不想安定，只是在等那个让你愿意停下脚步的人。',
+    recipe:'<span>3份</span>好奇 + <span>2份</span>智慧 + <span>1份</span>深度 + <span>少许</span>承诺 = 完美的晨露漫游者',
+    mantra:'「我不是在流浪，我只是在寻找那个让我想回家的人。」',
+    season:'本月星轨提示：社交运势爆棚，可能会在意想不到的场合遇到心动的人。保持开放的心态，但也要学会分辨真心。',
+    timeline:[
+      {label:'心动瞬间',text:'是在一次有趣的对话中——TA说了一个让你笑到停不下来的笑话，你突然意识到"这个人好有趣，我想了解更多"。'},
+      {label:'暧昧期',text:'你们像两只蝴蝶在花丛中飞舞，忽近忽远。你享受这种暧昧的感觉，但也害怕它变成沉重的承诺。'},
+      {label:'热恋期',text:'你把恋爱变成了一场精彩的冒险。每一天都有新话题、新体验、新发现。你的伴侣觉得自己在和你一起环游世界。'},
+      {label:'稳定期',text:'你学会了在自由和亲密之间找到平衡。你们有了各自的兴趣和空间，但每次回到彼此身边，都能感受到新鲜的吸引力。'}
+    ],
+    scenes:[
+      {icon:'🌅',title:'话题跳跃',text:'聊天记录从宇宙起源跳到今天午饭吃什么，毫无逻辑但充满乐趣',dialog:'"对了你知道吗章鱼有三个心脏！说到心脏我突然想到上次我们去的那家心脏形状的蛋糕店——啊不对，是那家章鱼小丸子！你中午想吃什么？"——思维跳跃是日常'},
+      {icon:'🌙',title:'深夜灵感',text:'凌晨2点突然想到一个绝妙的约会点子，立刻发消息给TA',dialog:'"醒醒醒醒！我刚想到一个超棒的计划——下周末我们去那个新开的密室逃脱吧！我查了一下评价超好的！...什么？你在睡觉？好吧...那我先记下来明天跟你说"——永远有说不完的点子'},
+      {icon:'🔥',title:'逃避现场',text:'当话题变得严肃时，你会本能地用幽默来转移注意力',dialog:'"所以你对我们的未来有什么想法？""哈哈你看过那个搞笑视频没？超好笑的哈哈哈哈""...我在认真问你。""我知道我知道，就是...我还没想好，但我知道和你在一起很开心啊"'}
+    ],
+    minefields:[
+      {icon:'💣',text:'<strong>被追问"你到底爱不爱我"</strong>：你当然爱，但被逼着说出口反而会让你想逃'},
+      {icon:'⚠️',text:'<strong>每天的聊天变成例行公事</strong>：当对话从"分享新鲜事"变成"早安/晚安"打卡，你会开始感到窒息'},
+      {icon:'🚫',text:'<strong>伴侣翻你手机</strong>：你没有什么不能看的，但这种不信任感会让你重新审视这段关系'}
+    ],
+    idealDate:{title:'🌈 冒险主题约会', desc:'上午：去一个你们都没去过的街区探索，随机选一家店走进去。午后：参加一个有趣的工作坊（陶艺/绘画/烘焙），一起创造属于你们的"作品"。傍晚：去一个有live音乐的小酒馆，边听歌边聊天。夜晚：散步回家路上，分享今天最开心的三个瞬间。'},
+    song:{name:'小幸运',artist:'田馥甄',reason:'轻快中带着温暖，像你一样——在自由自在的外表下，藏着对爱最真挚的期待。'},
+    partnerGuide:[
+      {title:'给你的行动指南',text:'TA需要新鲜感。不要让恋爱变成"打卡"，偶尔制造一些小惊喜和变化。'},
+      {title:'如何哄TA开心',text:'和TA一起尝试新事物——新餐厅、新电影、新爱好。共同探索就是最好的陪伴。'},
+      {title:'TA的小心思',text:'TA看起来很洒脱，但其实很在意你对TA分享的内容有没有认真回应。请放下手机，认真听TA说话。'}
+    ]
+  },
+  {
+    id:3, name:'月汐倾听者', zodiac:'巨蟹座', zodiacIdx:3, element:'water',
+    energy:'双鱼座', motto:'你的眼泪，是我最珍贵的宝石',
+    scores:{temp:80,pace:30,conflict:20,solitude:55},
+    strengths:[
+      {title:'超凡的共情力',desc:'你拥有一种神奇的能力：在伴侣开口之前，你就已经感受到了TA的情绪。你是最好的倾听者和安慰者，和你在一起，永远不会感到孤独。'},
+      {title:'温暖的港湾',desc:'你天生就有一种让人安心的气场。无论外面的世界多么喧嚣，只要回到你身边，一切都会变得温柔起来。你是伴侣最想回家见的那个人。'},
+      {title:'细腻入微的关怀',desc:'你记得伴侣的每一个小习惯、每一个重要日期、每一个不经意提起的愿望。你的爱藏在细节里，温暖而持久。'}
+    ],
+    blindspots:[
+      {title:'过度付出',desc:'你总是把伴侣放在第一位，却忘了照顾自己。长此以往，你会感到疲惫和委屈。记住，爱别人之前，先学会爱自己。'},
+      {title:'情绪化严重',desc:'你的情绪像月亮一样有阴晴圆缺。一点小事就能让你陷入低落，这不仅折磨自己，也让伴侣不知所措。'},
+      {title:'过度敏感',desc:'伴侣无心的一句话，你可能反复咀嚼好几天。学会区分"事实"和"想象"，不是所有事情都和你有关。'}
+    ],
+    growth:[
+      '建立情绪边界——不要把伴侣的负面情绪全部吸收',
+      '学会自我关怀——每周给自己安排一段"只属于自己"的时间',
+      '直接表达需求——不要期待伴侣能"猜到"你的想法',
+      '减少过度解读——有时候一句话就是字面意思，没有潜台词'
+    ],
+    loveLang:'你的主导爱语是<strong>高质量陪伴</strong>和<strong>身体接触</strong>。你需要的是被理解和被拥抱的感觉。',
+    match:{best:{name:'炽焰追光者',score:95,desc:'火的热烈治愈了水的敏感，你被坚定地选择就是最好的安全感'},challenge:{name:'晨露漫游者',score:62,desc:'TA的自由让你不安，你的深情让TA窒息'},secret:{name:'暗夜守望者',score:83,desc:'两个内向灵魂的共鸣，安静却深沉'}},
+    hidden:'你看起来温柔如水，但内心有一道坚不可摧的墙。你选择信任一个人需要很长时间，可一旦信任崩塌，就再也回不去了。',
+    recipe:'<span>3份</span>温柔 + <span>2份</span>坚强 + <span>1份</span>边界感 + <span>少许</span>洒脱 = 完美的月汐倾听者',
+    mantra:'「我的温柔很珍贵，只给值得的人。」',
+    season:'本月星轨提示：情感直觉特别敏锐，适合和伴侣进行一次深度对话。单身的话，留意身边一直默默关心你的人。',
+    timeline:[
+      {label:'心动瞬间',text:'是在TA无意间展现脆弱的那一刻——TA叹了口气说"今天有点累"，你的心突然揪了一下，想要保护TA。'},
+      {label:'暧昧期',text:'你小心翼翼地靠近，像月光一样温柔。你记住TA说的每一句话，在TA需要的时候恰好出现。'},
+      {label:'热恋期',text:'你把全部的自己都给了TA。TA的喜怒哀乐就是你的喜怒哀乐，你愿意为TA做任何事。'},
+      {label:'稳定期',text:'你学会了在付出和自我保护之间找到平衡。你依然温柔，但不再是那个无限付出、委屈自己的你了。'}
+    ],
+    scenes:[
+      {icon:'🌅',title:'暖心时刻',text:'TA随口说了一句"好想吃XX"，第二天你就端着出现在TA面前',dialog:'"你昨天不是说想吃这个吗？我按照网上的教程做的，不知道合不合你口味...你先尝尝...不好吃的话我下次再改进！"——永远把TA的需求放在第一位'},
+      {icon:'🌙',title:'深夜守护',text:'TA失眠时，你陪着聊到凌晨，哪怕自己明天还要早起',dialog:'"没事，你继续说，我在听。不困，真的不困...嗯...我理解你的感受...没关系，有我在呢。"——你的陪伴是最好的安眠药'},
+      {icon:'🔥',title:'委屈爆发',text:'忍了很久的委屈终于在一次小事上爆发了',dialog:'"你知道吗，我每次都迁就你的时间，每次都先考虑你的感受，但你有想过我吗？...对不起我不该这样...我不是想吵架...我只是...有点累了"——哭完之后又觉得自己太作了'}
+    ],
+    minefields:[
+      {icon:'💣',text:'<strong>TA说"你太敏感了"</strong>：这句话会瞬间击碎你的安全感，让你觉得自己连感受都是错的'},
+      {icon:'⚠️',text:'<strong>被忽视一整天</strong>：一条消息没回、一个电话没接——你的焦虑会从0飙升到100'},
+      {icon:'🚫',text:'<strong>TA在你面前夸别人</strong>：哪怕是无心的，你也会忍不住比较"是不是我不够好"'}
+    ],
+    idealDate:{title:'🌊 温泉主题约会', desc:'上午：一起去海边散步，捡贝壳，在沙滩上写下你们的名字。午后：找一家安静的温泉民宿，泡在温暖的泉水里聊心事。傍晚：一起做一顿简单的家常菜，享受"家"的感觉。夜晚：窝在一起看一部治愈系电影，你靠在TA肩上，听着TA的心跳入眠。'},
+    song:{name:'遇见',artist:'孙燕姿',reason:'温柔而深情，像你一样——在平凡中守护着最珍贵的爱。'},
+    partnerGuide:[
+      {title:'给你的行动指南',text:'TA需要安全感。主动报备行程、及时回复消息，这些小事对TA来说意义重大。'},
+      {title:'如何哄TA开心',text:'一个温暖的拥抱+一句"谢谢你一直这么温柔地对我"=TA瞬间被治愈。'},
+      {title:'TA的小心思',text:'TA说"我没事"的时候，往往是最需要你的时候。请多问一句"真的吗？来抱抱"。'}
+    ]
+  },
+  {
+    id:4, name:'皇冠织梦者', zodiac:'狮子座', zodiacIdx:4, element:'fire',
+    energy:'白羊座', motto:'在我的王国里，你是唯一的王后/国王',
+    scores:{temp:95,pace:75,conflict:85,solitude:30},
+    strengths:[
+      {title:'极致的浪漫制造机',desc:'别人谈恋爱，你是在拍电影。从精心策划的告白到令人窒息的惊喜，你把每一个恋爱瞬间都变成了值得铭记的场景。你的伴侣，就是你这部爱情大片的主角。'},
+      {title:'慷慨大方的爱人',desc:'你愿意把最好的都给伴侣。无论是物质上的慷慨还是情感上的付出，你从不吝啬。和你在一起，伴侣永远是被宠爱的那一个。'},
+      {title:'强大的保护欲',desc:'你有一种"霸道总裁"式的安全感。当伴侣遇到困难，你会第一个站出来。你的存在本身就是一种强大的保护。'}
+    ],
+    blindspots:[
+      {title:'自尊心过强',desc:'你的自尊心是你的盔甲，也是你的软肋。你很难接受伴侣的批评，哪怕对方是对的。学会低头，不是认输，而是成熟。'},
+      {title:'需要被崇拜',desc:'你需要伴侣的赞美和崇拜来维持自信。当伴侣没有给予足够的关注时，你会感到失落甚至愤怒。'},
+      {title:'控制欲作祟',desc:'你习惯做决定、做安排，但有时候伴侣也需要被尊重和被询问。爱情不是一个人的独角戏。'}
+    ],
+    growth:[
+      '学会接受批评——把伴侣的反馈当作成长的礼物',
+      '给伴侣舞台——让TA也有机会做决定和被关注',
+      '降低"表演"需求——不是每个瞬间都需要戏剧化',
+      '练习脆弱——偶尔示弱不会让你失去光环，反而更真实'
+    ],
+    loveLang:'你的主导爱语是<strong>肯定言语</strong>和<strong>礼物</strong>。你需要被赞美、被认可，也用慷慨的礼物表达爱。',
+    match:{best:{name:'暗夜守望者',score:92,desc:'你的光芒有了沉稳的底座，TA的理性平衡了你的戏剧感'},challenge:{name:'霓虹平衡者',score:65,desc:'两个都想当主角，需要学会轮流退让'},secret:{name:'幻境造梦者',score:84,desc:'两个浪漫灵魂的碰撞，爱情像童话一样美好'}},
+    hidden:'在光鲜亮丽的外表下，你其实非常害怕被抛弃。你的所有"表演"和"强势"，不过是为了确认自己是被爱的。',
+    recipe:'<span>3份</span>慷慨 + <span>2份</span>真诚 + <span>1份</span>谦逊 + <span>少许</span>脆弱 = 完美的皇冠织梦者',
+    mantra:'「真正的王者，是敢于在爱人面前卸下铠甲的人。」',
+    season:'本月星轨提示：魅力值拉满，走到哪里都是焦点。但记得把最耀眼的光留给最亲近的人，不要本末倒置。',
+    timeline:[
+      {label:'心动瞬间',text:'是在聚会上——TA在人群中闪闪发光，你心想"这个人，我要定了"。那一刻，你已经在规划你们的未来了。'},
+      {label:'暧昧期',text:'你展开了猛烈的攻势，精心策划每一次见面。你送的花、安排的晚餐、制造的惊喜，都是你"追爱大戏"的剧本。'},
+      {label:'热恋期',text:'你把伴侣宠成了全世界最幸福的人。名牌包、浪漫旅行、烛光晚餐——你用最好的来表达你的爱。'},
+      {label:'稳定期',text:'你学会了用更成熟的方式表达爱。不再是物质和排场，而是那些只有你们懂的默契和温暖。'}
+    ],
+    scenes:[
+      {icon:'🌅',title:'排场告白',text:'精心策划了一场堪比电影的告白仪式',dialog:'"我准备了三个月。这个餐厅是你最喜欢的，这首钢琴曲是你歌单里的，这束花是你朋友圈点赞过的。现在，我想问你——你愿意做我的人吗？"——告白也要做到完美'},
+      {icon:'🌙',title:'炫耀时刻',text:'忍不住在朋友圈秀恩爱，配文都是精心编辑的',dialog:'"今天又是被爱包围的一天💕 附图：精心摆拍的约会照片x9"——不是在炫耀，是真的想让全世界知道TA有多好'},
+      {icon:'🔥',title:'受伤时刻',text:'当伴侣没有在公开场合承认你们的关系时',dialog:'"你...为什么不介绍我是你男朋友/女朋友？是觉得我拿不出手吗？...我不是在生气，我只是...我那么骄傲地向全世界介绍你，为什么你不能也这样对我？"——自尊心碎了一地'}
+    ],
+    minefields:[
+      {icon:'💣',text:'<strong>在朋友面前被反驳</strong>：你的面子比什么都重要，公开场合的"打脸"会让你记很久'},
+      {icon:'⚠️',text:'<strong>伴侣对你的付出视而不见</strong>：你做了那么多，TA却一句"还行"就打发了——你的心会凉半截'},
+      {icon:'🚫',text:'<strong>被比较</strong>："你看看别人家的男朋友/女朋友"——这句话是核武器级别的伤害'}
+    ],
+    idealDate:{title:'👑 皇家主题约会', desc:'上午：包下TA一直想去的那家高级餐厅的VIP包间。午后：安排一辆豪车带TA去私人庄园下午茶。傍晚：在城市的最高处准备一场只属于两个人的日落晚餐，请一支弦乐四重奏现场演奏。夜晚：送上一份精心定制的礼物，附上一封手写的情书。'},
+    song:{name:'告白气球',artist:'周杰伦',reason:'浪漫而华丽，像你一样——爱就要轰轰烈烈，让全世界都看到。'},
+    partnerGuide:[
+      {title:'给你的行动指南',text:'TA需要被认可和赞美。经常夸TA、在公开场合表达对TA的欣赏，TA会为你付出更多。'},
+      {title:'如何哄TA开心',text:'真诚地赞美+一个崇拜的眼神="你的光芒照亮了我的世界"。TA会瞬间满血复活。'},
+      {title:'TA的小心思',text:'TA看起来强势，但非常害怕被拒绝。TA的"霸道"其实是"请爱我"的另一种表达。'}
+    ]
+  },
+  {
+    id:5, name:'暗夜守望者', zodiac:'处女座', zodiacIdx:5, element:'earth',
+    energy:'摩羯座', motto:'细节里藏着我对你的全部爱意',
+    scores:{temp:40,pace:20,conflict:25,solitude:80},
+    strengths:[
+      {title:'最细心的爱人',desc:'你记得伴侣的每一个过敏源、每一个小习惯、每一个不经意的偏好。你的爱不在嘴上，而在那些别人注意不到的细节里。'},
+      {title:'默默付出的守护者',desc:'你不会大张旗鼓地表白，但你会默默把伴侣的生活打理得井井有条。你修好了TA没提过的坏东西，准备了TA随口说想吃的菜。'},
+      {title:'值得信赖的依靠',desc:'你是最靠谱的伴侣。答应的事情一定做到，遇到问题一定解决。和你在一起，就像有了一道永远不会倒的墙。'}
+    ],
+    blindspots:[
+      {title:'完美主义枷锁',desc:'你对伴侣的要求有时候近乎苛刻。你不是不爱，只是希望一切都能更好。但记住，爱情不是追求完美，而是接受不完美。'},
+      {title:'情感表达障碍',desc:'你心里有一座火山，但表面看起来像一块冰。你的伴侣经常猜不透你在想什么，因为你很少主动表达感受。'},
+      {title:'过度分析',desc:'你会反复分析伴侣的每一句话、每一个动作，试图从中读出"真相"。但有时候，简单就是最好的答案。'}
+    ],
+    growth:[
+      '降低完美标准——"足够好"有时候比"完美"更重要',
+      '每天说一句"我爱你"——哪怕觉得肉麻，也要说出口',
+      '停止过度分析——不是每个细节都有深层含义',
+      '学会接受赞美——当伴侣夸你时，说"谢谢"就好'
+    ],
+    loveLang:'你的主导爱语是<strong>服务行动</strong>。你用无微不至的照顾表达爱，也最容易被对方的细心行动打动。',
+    match:{best:{name:'皇冠织梦者',score:92,desc:'你的沉稳托住了TA的光芒，理性与感性的完美互补'},challenge:{name:'极光冒险家',score:55,desc:'一个要安稳一个要自由，需要大量妥协'},secret:{name:'月汐倾听者',score:86,desc:'两个敏感灵魂的默契，无声胜有声'}},
+    hidden:'你看起来冷若冰霜，其实内心是一个巨大的情感储水池。你不是不会爱，你只是太害怕爱错人。一旦你打开心门，那份深情会让所有人震惊。',
+    recipe:'<span>3份</span>细心 + <span>2份</span>深情 + <span>1份</span>表达 + <span>少许</span>随性 = 完美的暗夜守望者',
+    mantra:'「不完美也没关系，爱本身就是最完美的答案。」',
+    season:'本月星轨提示：你的细心和靠谱会被人看到并欣赏。适合主动一点，不要总是等待别人先迈出那一步。',
+    timeline:[
+      {label:'心动瞬间',text:'是在TA毫无察觉的瞬间——TA认真工作的侧脸、TA帮陌生人指路的善良、TA笑起来眼角的细纹。你默默记住了这一切。'},
+      {label:'暧昧期',text:'你不会主动出击，而是默默做好一切。TA的电脑出了问题你远程修好，TA加班你悄悄点了外卖——但从不邀功。'},
+      {label:'热恋期',text:'你的爱像暗夜中的星光，不耀眼但持久。你用无微不至的照顾让TA感受到被珍视的温暖。'},
+      {label:'稳定期',text:'你们的感情像一棵大树，根扎得很深。你们不需要轰轰烈烈，因为彼此的存在本身就是最大的安心。'}
+    ],
+    scenes:[
+      {icon:'🌅',title:'默默修好',text:'TA随口抱怨了一下手机卡顿，第二天你帮TA清理好了所有垃圾文件',dialog:'"你的手机我帮你清理了一下，后台有几个耗电的App我关了，另外你那个充电线有点老化了，我给你买了一条新的放你包里了。"——从不邀功，但每个细节都是爱'},
+      {icon:'🌙',title:'深夜分析',text:'TA发了一条含糊的朋友圈，你分析了半小时',dialog:'"这条朋友圈...配图是咖啡和书，文字是\'有些话说不出口\'...TA是不是遇到什么事了？要不要问一下？不，先观察一下...万一是我多想了..."——过度分析是日常'},
+      {icon:'🔥',title:'笨拙表达',text:'想安慰TA但不知道说什么，最后变成了一堆实用的建议',dialog:'"你难过的话...我查了一下，这个时候可以试试深呼吸，另外我给你煮了红枣茶放在桌上了，温度应该刚好。如果你需要聊聊的话我随时都在。"——嘴笨但心暖'}
+    ],
+    minefields:[
+      {icon:'💣',text:'<strong>你的用心被忽视</strong>：你花了三天准备的惊喜，TA只说了句"哦谢谢"——你的心会沉到谷底'},
+      {icon:'⚠️',text:'<strong>被说"你想太多了"</strong>：你不是想太多，你只是太在乎了。但这句话会让你决定以后不再分享'},
+      {icon:'🚫',text:'<strong>生活秩序被打乱</strong>：你习惯按计划行事，突如其来的变化会让你焦虑不安'}
+    ],
+    idealDate:{title:'📖 书房主题约会', desc:'上午：一起去一家安静的书店，各自选一本书，然后交换阅读。午后：在附近的茶馆里分享读书心得，享受安静的二人世界。傍晚：一起下厨，按照你精心研究的菜谱做一顿完美的晚餐。夜晚：在台灯下一起写"恋爱日记"，记录今天的点滴。'},
+    song:{name:'平凡之路',artist:'朴树',reason:'内敛而深沉，像你一样——不张扬，但每一步都走得踏实而坚定。'},
+    partnerGuide:[
+      {title:'给你的行动指南',text:'TA的爱藏在细节里。请注意到那些被默默做好的小事，并真诚地表达感谢。'},
+      {title:'如何哄TA开心',text:'一句"谢谢你一直这么照顾我，我真的很幸运"会让TA开心好几天。'},
+      {title:'TA的小心思',text:'TA说"没事"可能是真的没事，但TA在默默帮你解决问题的时候，请一定要发现并感谢。'}
+    ]
+  },
+  {
+    id:6, name:'霓虹平衡者', zodiac:'天秤座', zodiacIdx:6, element:'air',
+    energy:'双子座', motto:'最好的爱情，是我和你都成为了更好的人',
+    scores:{temp:60,pace:55,conflict:15,solitude:65},
+    strengths:[
+      {title:'天生的关系调停者',desc:'你拥有极高的情商和审美，能让任何关系都变得和谐舒适。你擅长化解矛盾、平衡需求，是朋友圈中的"和事佬"和"知心人"。'},
+      {title:'优雅的恋爱态度',desc:'你谈恋爱自带滤镜和仪式感。从第一次约会的穿搭到日常的相处方式，你都追求一种优雅和平衡。和你恋爱，是一种享受。'},
+      {title:'公平公正',desc:'你不会单方面索取或付出，而是追求关系的平等和互惠。你尊重伴侣的意见，也期待被同样尊重。'}
+    ],
+    blindspots:[
+      {title:'选择困难症晚期',desc:'选餐厅、选电影、选礼物——每一个选择都能让你纠结半天。在恋爱大事上更是如此，你害怕做出"错误"的决定。'},
+      {title:'回避冲突',desc:'你太害怕吵架了，以至于会压抑自己的真实想法来维持表面和谐。但压抑不是解决，只是推迟了爆发的时间。'},
+      {title:'过度在意他人看法',desc:'你太在意别人怎么看待你的恋爱了。伴侣的穿着、你们的合照、公开秀恩爱的频率——你在意的东西太多了。'}
+    ],
+    growth:[
+      '练习快速决策——给自己设定"30秒决定"的小挑战',
+      '勇敢表达不满——温和但坚定地说出你的真实想法',
+      '减少对外界评价的依赖——你们的幸福不需要别人的点赞',
+      '学会独处决策——不依赖伴侣做每一个决定'
+    ],
+    loveLang:'你的主导爱语是<strong>高质量陪伴</strong>和<strong>肯定言语</strong>。你需要的是被理解和被欣赏的感觉。',
+    match:{best:{name:'深渊凝望者',score:91,desc:'你的平衡让TA的深情有了出口，TA的执着让你学会了直面内心'},challenge:{name:'皇冠织梦者',score:63,desc:'两个都想主导关系走向，需要更多妥协'},secret:{name:'银河织网者',score:84,desc:'两个独立灵魂的优雅共舞，精神层面的高度契合'}},
+    hidden:'你看起来总是云淡风轻，其实内心经常在天平两端反复摇摆。你不是没有主见，只是太害怕做出让任何人失望的选择。',
+    recipe:'<span>3份</span>优雅 + <span>2份</span>果断 + <span>1份</span>真实 + <span>少许</span>任性 = 完美的霓虹平衡者',
+    mantra:'「不必让所有人都满意，先让自己满意。」',
+    season:'本月星轨提示：人际关系和谐，适合带伴侣融入你的社交圈。但别忘了留出二人世界的专属时间。',
+    timeline:[
+      {label:'心动瞬间',text:'是在一次完美的对话中——你们聊了三个小时却毫无疲惫感，你心想"和这个人在一起好舒服"。'},
+      {label:'暧昧期',text:'你在"要不要表白"和"再等等看"之间反复横跳。你分析了所有可能性，列了利弊清单，但就是做不了决定。'},
+      {label:'热恋期',text:'你们的恋爱像一首和谐的交响乐。你们尊重彼此的空间，享受在一起的时光，偶尔的小摩擦也能优雅地化解。'},
+      {label:'稳定期',text:'你们的感情像一杯恰到好处的鸡尾酒——不浓不淡，刚刚好。你们是最好的伴侣，也是最默契的搭档。'}
+    ],
+    scenes:[
+      {icon:'🌅',title:'纠结日常',text:'为了选一家餐厅翻了两个小时的评价，最后问TA"你想吃什么"',dialog:'"这家环境好但菜品一般，那家味道好但位置太远...要不...你觉得呢？...不不不你选就好我都可以的！"——选择困难是日常'},
+      {icon:'🌙',title:'和事佬',text:'朋友之间发生矛盾，你第一个站出来调解',dialog:'"其实你们两个说的都有道理，不如这样...我们找个大家都能接受的方案好不好？"——天生的调解员，但有时候忘了自己的感受'},
+      {icon:'🔥',title:'压抑爆发',text:'忍了很久的不满终于在一次小事上爆发了',dialog:'"其实...上次那件事我到现在还在意...我知道我不该提了但是...我就是过不去那个坎...对不起我不是想吵架...我只是觉得不公平"——积压的情绪像洪水一样涌出'}
+    ],
+    minefields:[
+      {icon:'💣',text:'<strong>被逼着做二选一</strong>："你到底选我还是选TA？"——这种问题会让你崩溃'},
+      {icon:'⚠️',text:'<strong>伴侣觉得你"太圆滑"</strong>：你不是圆滑，你只是不想让任何人不舒服。但被这样误解很受伤'},
+      {icon:'🚫',text:'<strong>人际关系中的不公正</strong>：你对公平的执着近乎偏执，任何不公平的事都会让你寝食难安'}
+    ],
+    idealDate:{title:'🎨 艺术主题约会', desc:'上午：一起去美术馆看一场双人展，在艺术作品前分享各自的感受。午后：在一家设计感十足的咖啡馆享用下午茶，拍照打卡。傍晚：参加一个双人烹饪课，一起学做一道精致的甜品。夜晚：在城市的霓虹灯下散步，享受这座城市的浪漫氛围。'},
+    song:{name:'刚刚好',artist:'薛之谦',reason:'温柔而克制，像你一样——追求平衡和恰到好处，不偏不倚。'},
+    partnerGuide:[
+      {title:'给你的行动指南',text:'TA需要被认真对待。不要让TA总是做"好人"，鼓励TA表达真实想法。'},
+      {title:'如何哄TA开心',text:'帮TA做一个决定——"今晚去吃你上次提到的那家店吧"。减少TA的选择负担。'},
+      {title:'TA的小心思',text:'TA说"都可以"的时候，其实心里有偏好。请温柔地问"你真的都可以吗？"。'}
+    ]
+  },
+  {
+    id:7, name:'深渊凝望者', zodiac:'天蝎座', zodiacIdx:7, element:'water',
+    energy:'巨蟹座', motto:'要么全部，要么零——我不接受中间地带',
+    scores:{temp:85,pace:35,conflict:70,solitude:60},
+    strengths:[
+      {title:'极致的深情',desc:'你的爱是深海的暗流——表面平静，底下汹涌。一旦你认定一个人，你会用全部的身心去爱。这种极致的深情，是很多人一辈子都遇不到的。'},
+      {title:'超强的洞察力',desc:'你有一双能看穿一切的眼睛。伴侣的谎言、伪装、小心思，在你面前无所遁形。这种洞察力让你成为最"懂"伴侣的人。'},
+      {title:'忠诚的代名词',desc:'对你来说，背叛是不可饶恕的。你对伴侣的忠诚度近乎偏执，但也正是这种偏执，让伴侣感到前所未有的安全感。'}
+    ],
+    blindspots:[
+      {title:'控制欲与嫉妒心',desc:'你想知道伴侣的一切——和谁在一起、在聊什么、为什么笑。这种强烈的控制欲和嫉妒心，是你在爱情中最大的敌人。'},
+      {title:'记仇体质',desc:'你有一本无形的"账本"，记录着伴侣犯过的每一个错。哪怕是很久以前的事，你都能在吵架时精确地翻出来。'},
+      {title:'非黑即白的思维',desc:'你的世界只有爱和恨，没有灰色地带。这种极端的思维让你在感情中容易走极端——要么全部投入，要么彻底抽离。'}
+    ],
+    growth:[
+      '学会信任——给伴侣一些隐私空间，信任是爱情的基石',
+      '练习原谅——翻篇是一种能力，不是软弱',
+      '接受灰色地带——人和事都不是非黑即白的',
+      '控制情绪强度——不是每件事都值得你全力以赴'
+    ],
+    loveLang:'你的主导爱语是<strong>深度对话</strong>和<strong>身体接触</strong>。你需要灵魂层面的连接，表面的交流无法满足你。',
+    match:{best:{name:'霓虹平衡者',score:91,desc:'TA的平衡让你学会了放松，你的深情让TA感受到了被完全接纳'},challenge:{name:'炽焰追光者',score:58,desc:'两个强势灵魂的碰撞，容易互相伤害'},secret:{name:'繁花筑梦师',score:83,desc:'意想不到的稳定组合，深沉的爱与踏实的陪伴'}},
+    hidden:'你看起来强大而神秘，其实内心极度渴望被完全理解和接纳。你的冷漠和疏离，不过是为了保护那颗太过柔软的心。',
+    recipe:'<span>3份</span>深情 + <span>2份</span>信任 + <span>1份</span>释怀 + <span>少许</span>轻松 = 完美的深渊凝望者',
+    mantra:'「放下控制，才能拥抱真正的爱。」',
+    season:'本月星轨提示：直觉特别准确，适合做出重要的感情决定。但记住，直觉是参考，不是答案。',
+    timeline:[
+      {label:'心动瞬间',text:'是在TA不经意间展露真实自我的那一刻——TA卸下了所有伪装，你看到了一个脆弱而真实的灵魂，你想守护TA。'},
+      {label:'暧昧期',text:'你在暗处观察TA的一切。TA的朋友圈、TA的习惯、TA的过去——你想要了解TA的全部，然后决定是否值得投入。'},
+      {label:'热恋期',text:'你的爱像深海一样深沉而强烈。你把全部的自己都给了TA，也要求TA同样对你。你们的感情是排他性的、极致的。'},
+      {label:'稳定期',text:'你学会了信任和放手。你依然深情，但不再试图控制一切。你明白真正的爱是让TA自由，而TA选择回来。'}
+    ],
+    scenes:[
+      {icon:'🌅',title:'深度对话',text:'凌晨三点，你们聊着彼此最深的秘密和恐惧',dialog:'"你有没有那种感觉...就是明明身边有很多人，但真正能说心里话的一个都没有...直到遇见你。我从来没跟任何人说过这些。"——你的信任比什么都珍贵'},
+      {icon:'🌙',title:'暗中观察',text:'TA手机响了，你不动声色地瞟了一眼来电显示',dialog:'"......"（内心：这个人是谁？为什么这个时间打电话？TA的表情好像有点不自然...冷静，也许只是普通朋友...但我还是要留意一下。）——你的洞察力是天赋也是诅咒'},
+      {icon:'🔥',title:'质问现场',text:'发现了可疑的蛛丝马迹，直接摊牌',dialog:'"你昨天说在加班，但我看到你朋友发了你们聚餐的照片。你为什么要骗我？我不是生气你出去，我生气的是你骗我。如果你连诚实都做不到，我们之间还剩下什么？"——你的爱建立在绝对信任之上'}
+    ],
+    minefields:[
+      {icon:'💣',text:'<strong>发现谎言（哪怕是善意的）</strong>：对你来说，一次谎言足以摧毁积累多年的信任'},
+      {icon:'⚠️',text:'<strong>TA对你有所保留</strong>：你给了TA你的全部，但TA的内心深处似乎还有一个你进不去的房间'},
+      {icon:'🚫',text:'<strong>被背叛</strong>：这是你的底线。一旦越线，你可能会彻底切断联系，永不回头'}
+    ],
+    idealDate:{title:'🌊 深海主题约会', desc:'上午：去一个安静的私人影院，包场看一部关于爱与信任的电影。午后：在一家隐蔽的清吧里，面对面进行一次"真心话大冒险"——问那些平时不敢问的问题。傍晚：去海边，在潮声中交换彼此最深处的秘密。夜晚：一起点燃一盏孔明灯，把你们的愿望写在上面，看它飞向星空。'},
+    song:{name:'说散就散',artist:'袁娅维',reason:'深情而决绝，像你一样——爱的时候倾尽所有，但一旦信任崩塌，决不回头。'},
+    partnerGuide:[
+      {title:'给你的行动指南',text:'TA需要绝对的诚实和透明。不要隐瞒任何事情，哪怕是"善意的谎言"也不行。'},
+      {title:'如何哄TA开心',text:'主动分享你的内心世界——"今天发生了一件事我想第一时间告诉你"。TA会因为被信任而感动。'},
+      {title:'TA的小心思',text:'TA的冷漠不是不在乎，而是在保护自己。TA的占有欲不是控制，而是"我太害怕失去你"。'}
+    ]
+  },
+  {
+    id:8, name:'极光冒险家', zodiac:'射手座', zodiacIdx:8, element:'fire',
+    energy:'白羊座', motto:'世界那么大，我想和你一起去看看',
+    scores:{temp:75,pace:90,conflict:75,solitude:85},
+    strengths:[
+      {title:'永远充满正能量',desc:'你是行走的阳光发生器。无论遇到什么困难，你总能找到积极的一面。和你在一起，伴侣的世界会变得更加明亮和广阔。'},
+      {title:'最好的旅行伴侣',desc:'你天生就是为冒险而生的。一场说走就走的旅行、一次未知的探索、一个大胆的尝试——你让恋爱变成了一场精彩的冒险。'},
+      {title:'豁达的爱情观',desc:'你不会因为小事斤斤计较，也不会因为吵架就否定整段感情。你的豁达和乐观，让关系始终保持着轻松愉快的氛围。'}
+    ],
+    blindspots:[
+      {title:'害怕承诺',desc:'"永远"这个词让你有点窒息。你害怕承诺会限制你的自由，害怕安定会失去精彩。但真正的自由，是和一个人一起探索世界。'},
+      {title:'不够细心',desc:'你太忙于追逐远方，却忽略了身边的风景。伴侣的生日、你们的纪念日、TA最近的心情变化——这些细节你经常忘记。'},
+      {title:'逃避严肃话题',desc:'当关系需要面对现实问题时，你的第一反应是"跑"。你用幽默和乐观来回避那些让你不舒服的对话。'}
+    ],
+    growth:[
+      '记住重要日期——把伴侣的生日和纪念日设为日历提醒',
+      '面对现实问题——逃避不能解决问题，只会让问题变大',
+      '学会深度陪伴——不是每段时光都需要冒险，安静的陪伴同样珍贵',
+      '练习承诺——从小承诺开始，慢慢建立"说到做到"的习惯'
+    ],
+    loveLang:'你的主导爱语是<strong>共同体验</strong>和<strong>自由空间</strong>。你需要的是一起探索世界的快乐和不被束缚的自由。',
+    match:{best:{name:'琥珀封存者',score:90,desc:'你给TA看世界的眼睛，TA给你可以回归的家'},challenge:{name:'暗夜守望者',score:57,desc:'一个要飞一个要稳，价值观差异较大'},secret:{name:'皇冠织梦者',score:81,desc:'两个火象灵魂的冒险，精彩但需要冷静时刻'}},
+    hidden:'你看起来无拘无束，其实内心深处非常渴望有一个可以随时回去的"家"。你的冒险，不过是在寻找那个让你愿意停下脚步的人。',
+    recipe:'<span>3份</span>自由 + <span>2份</span>细心 + <span>1份</span>承诺 + <span>少许</span>安定 = 完美的极光冒险家',
+    mantra:'「真正的自由，是选择和一个人一起冒险。」',
+    season:'本月星轨提示：行动力爆棚，适合发起一场浪漫的旅行或尝试新的约会方式。但别忘了在冒险之余，给伴侣一些安稳的陪伴。',
+    timeline:[
+      {label:'心动瞬间',text:'是在一次旅行中——你们迷路了，但TA笑着说"没关系，迷路也是一种冒险"。那一刻，你决定要和TA一起探索世界。'},
+      {label:'暧昧期',text:'你们的暧昧像一场有趣的追逐游戏。你忽近忽远，TA欲擒故纵，两个人都享受这种不确定的刺激感。'},
+      {label:'热恋期',text:'你们像两只自由的鸟一起飞翔。今天在这个城市，明天在那个国家。每一天都是新的冒险，每一刻都充满惊喜。'},
+      {label:'稳定期',text:'你学会了在冒险和安定之间找到平衡。你们依然会去探索世界，但也享受回家后两个人窝在一起的温暖。'}
+    ],
+    scenes:[
+      {icon:'🌅',title:'说走就走',text:'周五晚上突然说"明天去海边吧"，然后连夜出发',dialog:'"收拾东西！五分钟！我们明天一早出发去XX！我已经查好了路线，民宿也订好了，快快快！...什么？你有安排？那...那下周？下下周也行！反正一定要去！"——行动力爆表'},
+      {icon:'🌙',title:'忘性大',text:'纪念日当天完全忘记，直到TA提醒才想起来',dialog:'"啊！！！今天是我们的纪念日？！对不起对不起！我...我马上补救！我现在就去订餐厅！你想要什么礼物？什么都行！...等等，去年我送了什么来着？"——真诚但让人哭笑不得'},
+      {icon:'🔥',title:'逃避现场',text:'当话题变得严肃时，你会本能地用幽默来转移注意力',dialog:'"我们认真谈谈未来吧。""好啊！说到未来，你知道2050年人类可能住在火星上吗？到时候我们可以去火星度蜜月！""...我在说我们的未来。""我知道我知道，我的意思是不管去哪里，只要和你在一起就行嘛！"'}
+    ],
+    minefields:[
+      {icon:'💣',text:'<strong>被说"你太不靠谱了"</strong>：你不是不靠谱，你只是活得太随性。但这句话会严重打击你'},
+      {icon:'⚠️',text:'<strong>每天重复的生活节奏</strong>：朝九晚五的固定生活会让你感到窒息，你需要自由和变化'},
+      {icon:'🚫',text:'<strong>伴侣想"定居"而你想"出发"</strong>：这是你们之间最大的矛盾，需要认真面对'}
+    ],
+    idealDate:{title:'🏕️ 冒险主题约会', desc:'上午：随机选一个方向开车出发，不设目的地，走到哪算哪。午后：在路边发现一家看起来不错的小店，走进去尝尝。傍晚：找一个视野开阔的地方搭帐篷，看日落和星空。夜晚：在篝火旁聊天、唱歌、数星星，享受最纯粹的浪漫。'},
+    song:{name:'旅行的意义',artist:'陈绮贞',reason:'自由而清新，像你一样——在路上的感觉才是最好的感觉。'},
+    partnerGuide:[
+      {title:'给你的行动指南',text:'TA需要自由和空间。不要试图绑住TA，和TA一起出发才是最好的选择。'},
+      {title:'如何哄TA开心',text:'"周末我们去个新地方吧！"——这句话比任何道歉都管用。'},
+      {title:'TA的小心思',text:'TA看起来无忧无虑，但其实很害怕孤独。TA的"出发"有时候是在逃避，请温柔地把TA拉回来。'}
+    ]
+  },
+  {
+    id:9, name:'琥珀封存者', zodiac:'摩羯座', zodiacIdx:9, element:'earth',
+    energy:'金牛座', motto:'时间会证明，我的爱比钻石更坚硬',
+    scores:{temp:35,pace:15,conflict:20,solitude:85},
+    strengths:[
+      {title:'最值得托付的伴侣',desc:'你的承诺比任何甜言蜜语都更有分量。你说"我会一直在"，就真的会一直在。在这个善变的时代，你的坚定是最珍贵的品质。'},
+      {title:'有远见的规划者',desc:'你不仅在爱当下，更在规划未来。你会认真考虑你们的职业发展、财务规划、生活目标。和你在一起，未来是清晰的。'},
+      {title:'越挫越勇的韧性',desc:'你们的感情遇到困难时，你不会轻易放弃。你会冷静分析问题、制定解决方案、一步一个脚印地修复关系。'}
+    ],
+    blindspots:[
+      {title:'过于理性',desc:'你用大脑谈恋爱，却忘了爱情需要用心感受。伴侣需要的不只是一个"解决方案"，更需要一个温暖的拥抱和一句"我在"。'},
+      {title:'工作狂倾向',desc:'你太忙于事业了，以至于留给恋爱的时间少得可怜。你的伴侣可能已经很久没有感受到被重视了。'},
+      {title:'不善浪漫',desc:'"浪漫"这个词不在你的字典里。你觉得实际行动比花里胡哨的东西重要，但伴侣有时候就是需要一点仪式感。'}
+    ],
+    growth:[
+      '每周安排一次"约会之夜"——放下工作，专注陪伴',
+      '学习表达情感——哪怕只是发一条"想你"的消息',
+      '制造小惊喜——买一束花、写一张卡片，这些小事意义重大',
+      '学会"无用"的快乐——不是所有事情都需要有目的和意义'
+    ],
+    loveLang:'你的主导爱语是<strong>服务行动</strong>和<strong>时间</strong>。你用长期的陪伴和实际的付出表达爱。',
+    match:{best:{name:'极光冒险家',score:90,desc:'你的沉稳给了TA安定的勇气，TA的活力让你的生活有了色彩'},challenge:{name:'晨露漫游者',score:56,desc:'一个要计划一个要随性，需要大量磨合'},secret:{name:'皇冠织梦者',score:82,desc:'两个强势性格的互补，理性与感性的奇妙平衡'}},
+    hidden:'你看起来冷硬如石，其实内心有一块最柔软的地方，只留给那个真正走进你心里的人。你的每一次沉默，都是在默默地说"我在"。',
+    recipe:'<span>3份</span>坚定 + <span>2份</span>温柔 + <span>1份</span>浪漫 + <span>少许</span>随性 = 完美的琥珀封存者',
+    mantra:'「事业是生活的一部分，但爱人才是生活的全部。」',
+    season:'本月星轨提示：事业运和桃花运并存，但不要让工作占据所有时间。适当放慢脚步，感情需要你的用心经营。',
+    timeline:[
+      {label:'心动瞬间',text:'不是某个戏剧性的瞬间，而是在日复一日的相处中，你突然意识到"这个人，我想和TA走很远的路"。'},
+      {label:'暧昧期',text:'你不会急于表白，而是用行动证明自己的可靠。你帮TA解决工作上的问题、在TA需要的时候出现。'},
+      {label:'热恋期',text:'你的爱像一棵大树，根扎得很深。你可能不会说甜言蜜语，但你的每一个行动都在说"我会一直在"。'},
+      {label:'稳定期',text:'你们的感情像陈年琥珀，经过时间的凝练，变得温润而珍贵。你们是最好的伴侣，也是最默契的搭档。'}
+    ],
+    scenes:[
+      {icon:'🌅',title:'务实关怀',text:'TA生病了，你没有说"多喝热水"，而是直接买了药送到门口',dialog:'"药放在门口了，饭后吃，一天三次。另外我帮你请了半天假，你好好休息。工作的事不用担心，我帮你跟领导说了。还有什么需要的发消息给我。"——行动永远比语言有力'},
+      {icon:'🌙',title:'规划未来',text:'深夜打开Excel表格，认真规划你们的五年计划',dialog:'"我算了一下，如果我们按照现在的节奏，三年后可以攒够首付。然后...你有没有想过以后住哪里？我看了几个小区...什么？太早了？我觉得...早做准备比较好。"——用理性表达最深沉的爱'},
+      {icon:'🔥',title:'笨拙浪漫',text:'TA生日那天，你送了一份"实用"的礼物',dialog:'"生日快乐。这个颈椎按摩仪是我对比了五款之后选的，性价比最高。另外...这束花是...是花店老板推荐的...我不太懂花但觉得挺好看的...你喜欢吗？"——浪漫细胞为零但用心程度满分'}
+    ],
+    minefields:[
+      {icon:'💣',text:'<strong>感情被说"没有激情"</strong>：你觉得稳定就是最好的爱，但TA可能需要更多浪漫和惊喜'},
+      {icon:'⚠️',text:'<strong>工作被说"比我还重要"</strong>：你努力工作是为了你们的未来，但TA需要的是当下的陪伴'},
+      {icon:'🚫',text:'<strong>计划被打乱</strong>：你习惯掌控一切，但爱情中最美好的事往往不在计划之内'}
+    ],
+    idealDate:{title:'🏛️ 经典主题约会', desc:'上午：一起去参观博物馆或历史遗迹，在文化中感受时间的厚重。午后：在一家有格调的西餐厅享用一顿正式的午餐，聊聊各自的理想和规划。傍晚：在家一起准备一顿精致的晚餐，打开一瓶好酒。夜晚：在阳台上看城市的夜景，聊聊你们的未来——这是你最擅长的部分。'},
+    song:{name:'稳稳的幸福',artist:'陈奕迅',reason:'踏实而深沉，像你一样——不追求轰轰烈烈，只要稳稳的幸福。'},
+    partnerGuide:[
+      {title:'给你的行动指南',text:'TA需要被理解和被陪伴。工作之余，请主动安排一些"只属于你们"的时间。'},
+      {title:'如何哄TA开心',text:'"谢谢你一直在为我们的未来努力"——这句话会让TA觉得一切都值得。'},
+      {title:'TA的小心思',text:'TA说"我没事"是真的没事，但TA希望你能主动说"今天辛苦了"。'}
+    ]
+  },
+  {
+    id:10, name:'银河织网者', zodiac:'水瓶座', zodiacIdx:10, element:'air',
+    energy:'天秤座', motto:'最好的爱情，是两个自由灵魂的相互选择',
+    scores:{temp:50,pace:70,conflict:50,solitude:90},
+    strengths:[
+      {title:'独立而深刻',desc:'你不需要依附任何人，却选择和某人在一起——这才是最高级的爱情。你的独立让关系保持新鲜，你的深刻让交流充满启发。'},
+      {title:'超前的思维方式',desc:'你总是能看到别人看不到的角度。在恋爱中，你能提供独特的视角和解决方案，让伴侣感到"原来还可以这样想"。'},
+      {title:'尊重与包容',desc:'你尊重伴侣的每一个选择，包容TA的每一个不同。你不会试图改变对方，而是欣赏TA原本的样子。'}
+    ],
+    blindspots:[
+      {title:'情感表达障碍',desc:'你的大脑运转速度太快，以至于情感总是跟不上。伴侣需要温暖的拥抱，你却给了一堆理性的分析。'},
+      {title:'距离感过强',desc:'你太独立了，独立到伴侣有时候觉得自己是单身。爱情需要亲密感，而你不自觉的疏离会让对方感到不安。'},
+      {title:'理想主义过高',desc:'你对爱情有着近乎完美的标准，这让你很难真正投入一段关系。你总是在等"更好的人"，却错过了眼前的人。'}
+    ],
+    growth:[
+      '每天一次身体接触——一个拥抱、一次牵手，让爱有温度',
+      '减少"分析"增加"感受"——不是所有事情都需要逻辑',
+      '主动表达爱意——不要让伴侣去猜你的感受',
+      '接受不完美——完美的爱情只存在于想象中'
+    ],
+    loveLang:'你的主导爱语是<strong>精神共鸣</strong>和<strong>自由空间</strong>。你需要的是思想层面的连接和不被束缚的感觉。',
+    match:{best:{name:'幻境造梦者',score:91,desc:'你的理性让TA的梦想有了落地的可能，TA的浪漫让你的世界有了色彩'},challenge:{name:'深渊凝望者',score:60,desc:'一个要空间一个要亲密，需要大量沟通'},secret:{name:'霓虹平衡者',score:84,desc:'两个智慧灵魂的碰撞，精神层面的完美契合'}},
+    hidden:'你看起来像一座冰山，但冰山下面藏着一颗最炽热的心。你不是不爱，你只是在等一个能跟上你思维节奏的人。',
+    recipe:'<span>3份</span>独立 + <span>2份</span>温度 + <span>1份</span>浪漫 + <span>少许</span>依赖 = 完美的银河织网者',
+    mantra:'「独立是底气，依赖是勇气，两者兼备才是完整的爱情。」',
+    season:'本月星轨提示：灵感爆棚，适合用创意的方式表达爱。但别忘了，有时候最简单的陪伴就是最好的礼物。',
+    timeline:[
+      {label:'心动瞬间',text:'是在一次深度对话中——TA说了一个让你"醍醐灌顶"的观点，你突然觉得"这个人能理解我"。'},
+      {label:'暧昧期',text:'你用一种独特的方式靠近——分享有趣的文章、讨论深刻的话题、在思想碰撞中拉近距离。'},
+      {label:'热恋期',text:'你们的恋爱像一场智慧的共舞。你们聊哲学、聊未来、聊人类的命运——你们的连接在精神层面。'},
+      {label:'稳定期',text:'你学会了在精神世界和现实生活之间找到平衡。你们依然有深度的对话，但也学会了享受平凡的日常。'}
+    ],
+    scenes:[
+      {icon:'🌅',title:'知识分享',text:'看到一篇有趣的文章立刻转发给TA，附带500字读后感',dialog:'"这篇文章的观点很有意思，但我觉得作者忽略了一个变量。你看第三段...对，就是这个逻辑漏洞。你怎么看？...什么？你还没看？没关系我总结一下..."——分享欲爆棚但容易忽略对方的感受'},
+      {icon:'🌙',title:'情感短路',text:'TA哭了，你的第一反应是分析原因而不是安慰',dialog:'"你哭是因为A、B还是C？如果是A的话，根据我的分析，最有效的解决方案是...等等，你在哭，我应该先...那个...别哭了？...要抱抱吗？...我不太擅长这个但我在努力..."——情感表达是硬伤'},
+      {icon:'🔥',title:'空间争议',text:'TA想每天黏在一起，你需要独处时间',dialog:'"我不是不爱你，我只是需要一些时间独处。独处对我来说就像充电，充好了电我才能更好地陪你。你看，我充电的时候也没闲着，我在想我们的未来...什么？你觉得我在找借口？...我真的不是..."——被误解是常态'}
+    ],
+    minefields:[
+      {icon:'💣',text:'<strong>被说"你太冷漠了"</strong>：你不是冷漠，你只是用不同的方式表达爱。但这句话会让你怀疑自己'},
+      {icon:'⚠️',text:'<strong>伴侣试图改变你</strong>：你接受自己本来的样子，也期望对方如此。试图改变你的人会让你想逃'},
+      {icon:'🚫',text:'<strong>被情感绑架</strong>："你不做XX就是不爱我"——这种话会让你立刻想结束关系'}
+    ],
+    idealDate:{title:'🌌 星空主题约会', desc:'上午：一起去科技馆或天文台，探索宇宙的奥秘。午后：在一家安静的咖啡馆里，一人一本书，偶尔分享有趣的段落。傍晚：去一个可以看星空的地方，躺在草地上数星星、聊人生。夜晚：回家路上讨论一个你们都感兴趣的"烧脑"话题，享受思想碰撞的快感。'},
+    song:{name:'克卜勒',artist:'孙燕姿',reason:'独立而深邃，像你一样——在浩瀚宇宙中寻找那颗与自己共振的星。'},
+    partnerGuide:[
+      {title:'给你的行动指南',text:'TA需要精神层面的连接。和TA讨论一些深刻的话题，分享你的想法和见解。'},
+      {title:'如何哄TA开心',text:'"我今天在想一个问题，想听听你的看法"——这句话对TA来说就是"我爱你"。'},
+      {title:'TA的小心思',text:'TA说"我需要独处"不是不爱你，而是真的在充电。请给TA空间，TA会带着满满的能量回来。'}
+    ]
+  },
+  {
+    id:11, name:'幻境造梦者', zodiac:'双鱼座', zodiacIdx:11, element:'water',
+    energy:'天蝎座', motto:'在我的梦里，你永远是主角',
+    scores:{temp:88,pace:40,conflict:10,solitude:50},
+    strengths:[
+      {title:'最浪漫的灵魂',desc:'你天生就是为爱情而生的。你能在平凡的生活中发现浪漫，在琐碎的日常中创造诗意。和你恋爱，就像活在一部唯美的电影里。'},
+      {title:'无与伦比的共情力',desc:'你能感受到伴侣的每一个情绪波动，甚至比TA自己还了解TA。你是最好的灵魂伴侣，能提供最深层次的情感支持。'},
+      {title:'富有创造力的表达',desc:'你用诗歌、音乐、绘画、文字来表达爱。你的每一份礼物都独一无二，每一句情话都像艺术品。'}
+    ],
+    blindspots:[
+      {title:'过度理想化',desc:'你在脑海中构建了一个完美的伴侣形象，然后试图把现实中的TA塞进这个框架。当现实和想象不符时，你会感到深深的失望。'},
+      {title:'边界感模糊',desc:'你太容易沉浸在伴侣的情绪中，以至于分不清哪些是自己的感受，哪些是对方的。这种过度共情会让你精疲力竭。'},
+      {title:'逃避现实',desc:'当感情遇到问题时，你的第一反应是躲进幻想世界。你用浪漫来逃避现实，用甜言蜜语来掩盖真正的问题。'}
+    ],
+    growth:[
+      '接受现实的不完美——真实的伴侣比想象中的更好',
+      '建立情感边界——分清"我的感受"和"TA的感受"',
+      '面对问题——不要用浪漫来逃避需要解决的现实问题',
+      '培养独立兴趣——不要把所有情感都寄托在恋爱上'
+    ],
+    loveLang:'你的主导爱语是<strong>深度对话</strong>和<strong>身体接触</strong>。你需要灵魂层面的融合和被完全接纳的感觉。',
+    match:{best:{name:'银河织网者',score:91,desc:'TA的理性让你的梦想有了翅膀，你的浪漫让TA的世界有了温度'},challenge:{name:'暗夜守望者',score:62,desc:'两个敏感灵魂容易互相消耗，需要更多空间'},secret:{name:'皇冠织梦者',score:85,desc:'两个浪漫灵魂的碰撞，爱情像童话一样美好'}},
+    hidden:'你看起来柔弱如水，其实内心有着最坚韧的力量。你的每一次哭泣，都是在净化灵魂；你的每一次原谅，都是在超越自我。',
+    recipe:'<span>3份</span>浪漫 + <span>2份</span>清醒 + <span>1份</span>边界 + <span>少许</span>现实 = 完美的幻境造梦者',
+    mantra:'「最浪漫的事，是在现实中和一个人慢慢变老。」',
+    season:'本月星轨提示：灵感特别丰富，适合用创意的方式表达爱意。但要注意区分幻想和现实，不要因为过度理想化而错过眼前人。',
+    timeline:[
+      {label:'心动瞬间',text:'是在一个如梦如幻的瞬间——也许是夕阳下的一个回眸，也许是雨中的一把伞，你的心像被施了魔法一样被触动。'},
+      {label:'暧昧期',text:'你在脑海中编织了无数个关于你们的浪漫场景。你写诗、画画、听情歌——你已经在心里和TA谈了一百次恋爱了。'},
+      {label:'热恋期',text:'你们的恋爱像一部唯美的电影。你用创意和浪漫把每一天都变成了值得纪念的日子。TA觉得自己活在梦里。'},
+      {label:'稳定期',text:'你学会了在浪漫和现实之间找到平衡。你依然有创意和梦想，但也懂得了脚踏实地的重要性。'}
+    ],
+    scenes:[
+      {icon:'🌅',title:'浪漫制造',text:'为TA准备了一场充满仪式感的惊喜',dialog:'"闭上眼睛...好，现在睁开。这些星星是我一颗一颗折的，每一颗上面都写了一句我想对你说的话。你随便拆一颗看看...对，那句\'你是我最美的意外\'是我想了三天才写的..."——浪漫到骨子里'},
+      {icon:'🌙',title:'幻想与现实',text:'TA说了一句普通的话，你在脑海里已经写了一部小说',dialog:'"TA今天说\'你今天穿得很好看\'...这句话到底什么意思？是随口说的还是真的觉得好看？是不是意味着TA最近有在关注我？还是说...TA是不是也对别人说过同样的话...不行我不能再想了..."——脑补能力MAX'},
+      {icon:'🔥',title:'现实打击',text:'当浪漫幻想被现实打破时',dialog:'"你说的\'随便\'是什么意思？是随便到哪家都行，还是你其实有想去的地方但不好意思说？还是你根本不想出去？...我准备了三个方案你都不满意...我是不是做得不够好..."——过度付出导致过度敏感'}
+    ],
+    minefields:[
+      {icon:'💣',text:'<strong>TA没有回应你的浪漫</strong>：你精心准备的惊喜，TA只说了句"嗯"，你会觉得整个世界都塌了'},
+      {icon:'⚠️',text:'<strong>发现TA和你想象中不一样</strong>：你爱上的可能是一个理想化的形象，当现实与想象不符时会非常痛苦'},
+      {icon:'🚫',text:'<strong>被说"你太不现实了"</strong>：你的浪漫不是不现实，那是你表达爱的方式。但这句话会让你觉得自己很傻'}
+    ],
+    idealDate:{title:'🎭 梦境主题约会', desc:'上午：一起去一家有故事的古董店或二手书店，寻找属于你们的"缘分之物"。午后：在一家有钢琴的咖啡馆里，你为TA弹奏一首自己谱的曲子。傍晚：去海边或湖边，在夕阳下互相读写给对方的情书。夜晚：一起看一部经典的爱情电影，然后讨论"如果是我们，会怎么选择"。'},
+    song:{name:'大鱼',artist:'周深',reason:'空灵而深情，像你一样——在现实与梦境之间，用最温柔的方式爱着一个人。'},
+    partnerGuide:[
+      {title:'给你的行动指南',text:'TA需要被理解和被欣赏。认真对待TA的每一个浪漫想法，哪怕你觉得有点"夸张"。'},
+      {title:'如何哄TA开心',text:'回赠一份用心的创意礼物——一首诗、一幅画、一封手写信。TA会因为你的用心而感动到哭。'},
+      {title:'TA的小心思',text:'TA的浪漫不是做作，是TA表达爱的方式。请不要嘲笑TA的"少女心/少年心"，那是TA最珍贵的部分。'}
+    ]
+  }
+];
+
+// ═══════════════════════════════════════════════════
+// APP STATE
+// ═══════════════════════════════════════════════════
+let currentPage = 'splash';
+let pageHistory = [];
+let currentQ = 0;
+let answers = new Array(15).fill(null);
+let touchStartX = 0;
+let touchStartY = 0;
+let isUnlocked = false;
+let currentPassword = '';
+let passwordTime = '';
+let passwordTimestamp = 0; // 毫秒级时间戳，用于自动过期判断
+let adminClickCount = 0;
+let adminClickTimer = null;
+let passwordAutoTimer = null; // 自动刷新定时器
+
+// ═══════════════════════════════════════════════════
+// PASSWORD SYSTEM
+// ═══════════════════════════════════════════════════
+function generatePassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const symbols = ['✦','✧','◆','◇','★','☆'];
+  let pwd = '';
+  // Format: ✦X X X X ✧X X
+  pwd += symbols[Math.floor(Math.random()*symbols.length)];
+  for (let i = 0; i < 3; i++) pwd += chars[Math.floor(Math.random()*chars.length)];
+  pwd += symbols[Math.floor(Math.random()*symbols.length)];
+  for (let i = 0; i < 3; i++) pwd += chars[Math.floor(Math.random()*chars.length)];
+  currentPassword = pwd;
+  passwordTime = new Date().toLocaleString('zh-CN');
+  passwordTimestamp = Date.now();
+  // Save to localStorage
+  try { localStorage.setItem('lxpwd', pwd); localStorage.setItem('lxtime', passwordTime); localStorage.setItem('lxts', String(passwordTimestamp)); } catch(e) {}
+}
+
+function loadPassword() {
+  try {
+    const saved = localStorage.getItem('lxpwd');
+    const savedTime = localStorage.getItem('lxtime');
+    const savedTs = parseInt(localStorage.getItem('lxts')) || 0;
+    if (saved && saved.length >= 8) {
+      // 检查是否超过1小时（3600000毫秒）
+      if (savedTs && (Date.now() - savedTs > 3600000)) {
+        generatePassword(); // 超时自动刷新
+        resetUnlockState();  // 旧密码失效，重置解锁状态
+      } else {
+        currentPassword = saved;
+        passwordTime = savedTime || '未知';
+        passwordTimestamp = savedTs || Date.now();
+      }
+    } else {
+      generatePassword();
+    }
+  } catch(e) {
+    generatePassword();
+  }
+  // 启动自动刷新定时器，每60秒检查一次
+  startPasswordAutoRefresh();
+}
+
+// 密码自动刷新：每60秒检查是否超过1小时，超时则自动更换
+function startPasswordAutoRefresh() {
+  if (passwordAutoTimer) clearInterval(passwordAutoTimer);
+  passwordAutoTimer = setInterval(() => {
+    if (passwordTimestamp && (Date.now() - passwordTimestamp > 3600000)) {
+      generatePassword();
+      resetUnlockState(); // 旧密码失效，重置解锁状态
+      // 如果管理面板正在打开状态，实时更新显示
+      const panel = document.getElementById('adminPanel');
+      if (panel && panel.classList.contains('show')) {
+        document.getElementById('adminPwdCode').textContent = currentPassword;
+        document.getElementById('adminPwdTime').textContent = '生成时间：' + passwordTime;
+      }
+    }
+  }, 60000); // 每60秒检查
+}
+
+function verifyPassword() {
+  const input = document.getElementById('pwdInput');
+  const status = document.getElementById('pwdStatus');
+  const btn = document.getElementById('startBtn');
+  const val = input.value.trim().toUpperCase();
+
+  if (val === currentPassword) {
+    input.classList.remove('error');
+    input.classList.add('success');
+    status.textContent = '✅ 解锁成功！开始你的星轨之旅吧';
+    status.className = 'pwd-status ok';
+    btn.classList.remove('locked');
+    isUnlocked = true;
+    // Auto scroll to button
+    setTimeout(() => btn.scrollIntoView({behavior:'smooth',block:'center'}), 300);
+  } else {
+    input.classList.remove('success');
+    input.classList.add('error');
+    status.textContent = '❌ 密码错误，请重新输入';
+    status.className = 'pwd-status fail';
+    setTimeout(() => input.classList.remove('error'), 400);
+  }
+}
+
+// Enter key to verify
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && currentPage === 'intro' && document.activeElement?.id === 'pwdInput') {
+    verifyPassword();
+  }
+});
+
+// Admin: long-press to open
+let adminPressTimer = null;
+let adminPressStart = 0;
+document.addEventListener('DOMContentLoaded', () => {
+  const trigger = document.getElementById('adminTrigger');
+  if (!trigger) return;
+  trigger.addEventListener('touchstart', e => {
+    adminPressStart = Date.now();
+    adminPressTimer = setTimeout(() => {
+      openAdmin();
+      if (navigator.vibrate) navigator.vibrate(100);
+    }, 1500);
+  }, {passive: true});
+  trigger.addEventListener('touchend', () => { clearTimeout(adminPressTimer); });
+  trigger.addEventListener('touchmove', () => { clearTimeout(adminPressTimer); });
+  // Desktop: long press (mousedown + hold)
+  trigger.addEventListener('mousedown', () => {
+    adminPressTimer = setTimeout(() => { openAdmin(); }, 1500);
+  });
+  trigger.addEventListener('mouseup', () => { clearTimeout(adminPressTimer); });
+  trigger.addEventListener('mouseleave', () => { clearTimeout(adminPressTimer); });
+});
+
+function openAdmin() {
+  document.getElementById('adminPwdCode').textContent = currentPassword;
+  updateAdminTimeDisplay();
+  document.getElementById('adminCopied').textContent = '';
+  document.getElementById('adminPanel').classList.add('show');
+  // 启动倒计时显示更新
+  startAdminCountdown();
+}
+
+function updateAdminTimeDisplay() {
+  const remaining = getPasswordRemaining();
+  const timeEl = document.getElementById('adminPwdTime');
+  if (remaining <= 0) {
+    timeEl.textContent = '生成时间：' + passwordTime + '（已过期，已自动刷新）';
+    timeEl.style.color = '#FF6B6B';
+  } else {
+    const mins = Math.floor(remaining / 60000);
+    const secs = Math.floor((remaining % 60000) / 1000);
+    timeEl.textContent = '生成时间：' + passwordTime + '（剩余 ' + mins + '分' + secs + '秒）';
+    timeEl.style.color = remaining < 300000 ? '#FF6B6B' : ''; // 最后5分钟变红
+  }
+}
+
+function getPasswordRemaining() {
+  if (!passwordTimestamp) return 0;
+  return Math.max(0, 3600000 - (Date.now() - passwordTimestamp));
+}
+
+let adminCountdownTimer = null;
+function startAdminCountdown() {
+  if (adminCountdownTimer) clearInterval(adminCountdownTimer);
+  adminCountdownTimer = setInterval(() => {
+    const panel = document.getElementById('adminPanel');
+    if (!panel || !panel.classList.contains('show')) {
+      clearInterval(adminCountdownTimer);
+      adminCountdownTimer = null;
+      return;
+    }
+    updateAdminTimeDisplay();
+  }, 1000);
+}
+
+function closeAdmin() {
+  document.getElementById('adminPanel').classList.remove('show');
+}
+
+function copyAdminPwd() {
+  navigator.clipboard.writeText(currentPassword).then(() => {
+    document.getElementById('adminCopied').textContent = '✅ 已复制到剪贴板！可直接发送给用户';
+    setTimeout(() => { document.getElementById('adminCopied').textContent = ''; }, 3000);
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = currentPassword;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    document.getElementById('adminCopied').textContent = '✅ 已复制！';
+    setTimeout(() => { document.getElementById('adminCopied').textContent = ''; }, 3000);
+  });
+}
+
+function resetUnlockState() {
+  isUnlocked = false;
+  const btn = document.getElementById('startBtn');
+  if (btn) btn.classList.add('locked');
+  const input = document.getElementById('pwdInput');
+  if (input) { input.value = ''; input.classList.remove('success','error'); }
+  const status = document.getElementById('pwdStatus');
+  if (status) { status.textContent = ''; status.className = 'pwd-status'; }
+}
+
+function refreshPassword() {
+  generatePassword();
+  document.getElementById('adminPwdCode').textContent = currentPassword;
+  updateAdminTimeDisplay();
+  document.getElementById('adminCopied').textContent = '🔄 已生成新密码';
+}
+
+// Init password on load
+loadPassword();
+
+// ═══════════════════════════════════════════════════
+// STARS
+// ═══════════════════════════════════════════════════
+function createStars() {
+  const sf = document.getElementById('starfield');
+  for (let i = 0; i < 80; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2.5 + 0.5;
+    s.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--dur:${Math.random()*3+1.5}s;animation-delay:${Math.random()*3}s`;
+    sf.appendChild(s);
+  }
+}
+createStars();
+
+// ═══════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════
+function goTo(pageId) {
+  if (currentPage === pageId) return;
+  pageHistory.push(currentPage);
+  const oldPage = document.getElementById(currentPage);
+  const newPage = document.getElementById(pageId);
+  oldPage.classList.remove('active');
+  oldPage.classList.add('exit-left');
+  setTimeout(() => oldPage.classList.remove('exit-left'), 400);
+  newPage.classList.add('active');
+  currentPage = pageId;
+  updateBackBtn();
+}
+
+function goBack() {
+  if (pageHistory.length === 0) return;
+  const prev = pageHistory.pop();
+  const oldPage = document.getElementById(currentPage);
+  const newPage = document.getElementById(prev);
+  oldPage.classList.remove('active');
+  oldPage.classList.add('exit-right');
+  setTimeout(() => oldPage.classList.remove('exit-right'), 400);
+  newPage.classList.add('active');
+  currentPage = prev;
+  updateBackBtn();
+}
+
+function updateBackBtn() {
+  const btn = document.getElementById('globalBack');
+  const lightPages = ['intro'];
+  if (currentPage === 'splash' || currentPage === 'home' || currentPage === 'quiz' || currentPage === 'result') {
+    btn.classList.remove('visible');
+  } else {
+    btn.classList.add('visible');
+    if (lightPages.includes(currentPage)) {
+      btn.classList.add('light-mode');
+    } else {
+      btn.classList.remove('light-mode');
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// QUIZ
+// ═══════════════════════════════════════════════════
+function startQuiz() {
+  currentQ = 0;
+  answers = new Array(15).fill(null);
+  buildQuiz();
+  goTo('quiz');
+  updateQuizUI();
+}
+
+function buildQuiz() {
+  const body = document.getElementById('quizBody');
+  const dots = document.getElementById('qDots');
+  body.innerHTML = '';
+  dots.innerHTML = '';
+  questions.forEach((q, i) => {
+    const slide = document.createElement('div');
+    slide.className = 'quiz-slide' + (i === 0 ? ' center' : ' right');
+    slide.innerHTML = `
+      <div class="quiz-q-num">${ZODIAC_ICONS[i % 12]} ${String(i + 1).padStart(2, '0')}</div>
+      <div class="quiz-q-text">${q.q}</div>
+      <div class="quiz-options">
+        <div class="quiz-option" data-qi="${i}" data-val="a" onclick="selectOption(${i},'a',this)">${q.a}</div>
+        <div class="quiz-option" data-qi="${i}" data-val="b" onclick="selectOption(${i},'b',this)">${q.b}</div>
+      </div>`;
+    body.appendChild(slide);
+    const dot = document.createElement('div');
+    dot.className = 'quiz-dot' + (i === 0 ? ' current' : '');
+    dots.appendChild(dot);
+  });
+}
+
+function selectOption(qi, val, el) {
+  answers[qi] = val;
+  const opts = el.parentElement.querySelectorAll('.quiz-option');
+  opts.forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  const nextBtn = document.getElementById('qNext');
+  nextBtn.style.opacity = '1';
+  nextBtn.style.pointerEvents = 'auto';
+  // Update dots
+  const dots = document.querySelectorAll('.quiz-dot');
+  dots[qi].classList.add('done');
+  dots[qi].classList.remove('current');
+}
+
+function nextQuestion() {
+  if (answers[currentQ] === null) return;
+  if (currentQ < 14) {
+    const slides = document.querySelectorAll('.quiz-slide');
+    slides[currentQ].classList.remove('center');
+    slides[currentQ].classList.add('left');
+    currentQ++;
+    slides[currentQ].classList.remove('right');
+    slides[currentQ].classList.add('center');
+    updateQuizUI();
+  } else {
+    showAnalyzing();
+  }
+}
+
+function prevQuestion() {
+  if (currentQ > 0) {
+    const slides = document.querySelectorAll('.quiz-slide');
+    slides[currentQ].classList.remove('center');
+    slides[currentQ].classList.add('right');
+    currentQ--;
+    slides[currentQ].classList.remove('left');
+    slides[currentQ].classList.add('center');
+    updateQuizUI();
+  }
+}
+
+function updateQuizUI() {
+  document.getElementById('qNum').textContent = `${currentQ + 1}/15`;
+  document.getElementById('qBar').style.width = `${((currentQ + 1) / 15) * 100}%`;
+  const nextBtn = document.getElementById('qNext');
+  if (currentQ === 14) {
+    nextBtn.textContent = '查看我的恋轨 ✦';
+  } else {
+    nextBtn.textContent = '下一题';
+  }
+  if (answers[currentQ] !== null) {
+    nextBtn.style.opacity = '1';
+    nextBtn.style.pointerEvents = 'auto';
+    // Restore selection
+    const slides = document.querySelectorAll('.quiz-slide');
+    const opts = slides[currentQ].querySelectorAll('.quiz-option');
+    opts.forEach(o => {
+      if (o.dataset.val === answers[currentQ]) o.classList.add('selected');
+    });
+  } else {
+    nextBtn.style.opacity = '.5';
+    nextBtn.style.pointerEvents = 'none';
+  }
+  // Update dots
+  const dots = document.querySelectorAll('.quiz-dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('current');
+    if (i === currentQ) d.classList.add('current');
+  });
+  // Update back button visibility
+  const qBack = document.getElementById('quizBack');
+  qBack.style.visibility = currentQ > 0 ? 'visible' : 'hidden';
+  // Scroll to top
+  document.getElementById('quizBody').scrollTop = 0;
+}
+
+// Swipe support
+document.addEventListener('touchstart', e => {
+  if (currentPage !== 'quiz') return;
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+document.addEventListener('touchend', e => {
+  if (currentPage !== 'quiz') return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+    if (dx < 0 && answers[currentQ] !== null) nextQuestion();
+    else if (dx > 0) prevQuestion();
+  }
+}, { passive: true });
+
+// ═══════════════════════════════════════════════════
+// ANALYZING
+// ═══════════════════════════════════════════════════
+let analyzeTimer = null;
+function showAnalyzing() {
+  goTo('analyzing');
+  const texts = ['正在解读你的星轨...', '正在匹配守护星座...', '正在绘制你的恋轨图...'];
+  const result = calculateResult();
+  let step = 0;
+  const textEl = document.getElementById('analyzeText');
+  const resultEl = document.getElementById('analyzeResult');
+  resultEl.classList.remove('show');
+  resultEl.textContent = '';
+
+  analyzeTimer = setInterval(() => {
+    step++;
+    if (step < texts.length) {
+      textEl.style.opacity = '0';
+      setTimeout(() => {
+        textEl.textContent = texts[step];
+        textEl.style.opacity = '1';
+      }, 300);
+    } else {
+      clearInterval(analyzeTimer);
+      textEl.style.opacity = '0';
+      setTimeout(() => {
+        textEl.textContent = `你的守护星座是${result.zodiac}`;
+        textEl.style.opacity = '1';
+        setTimeout(() => {
+          resultEl.textContent = result.name;
+          resultEl.classList.add('show');
+          setTimeout(() => showResult(result), 1500);
+        }, 800);
+      }, 300);
+    }
+  }, 1200);
+}
+
+function skipAnalyze() {
+  if (analyzeTimer) clearInterval(analyzeTimer);
+  const result = calculateResult();
+  showResult(result);
+}
+
+// ═══════════════════════════════════════════════════
+// SCORING
+// ═══════════════════════════════════════════════════
+function calculateResult() {
+  let tempA = 0, paceA = 0, conflictA = 0, solitudeA = 0;
+  for (let i = 0; i < 12; i++) {
+    const a = answers[i];
+    if (!a) continue;
+    const isA = a === 'a';
+    if (i < 3) tempA += isA ? 1 : 0;
+    else if (i < 6) paceA += isA ? 1 : 0;
+    else if (i < 9) conflictA += isA ? 1 : 0;
+    else solitudeA += isA ? 1 : 0;
+  }
+  // Map to personality: tempA, paceA, conflictA, solitudeA each 0-3
+  // temp: high=0,4,8,11; low=1,3,5,9,10
+  // pace: high=0,2,6,8; low=1,3,5,7,9,11
+  // conflict: high=0,4,7,8; low=1,3,5,6,9,10,11
+  // solitude: high=2,5,8,9,10; low=0,4,6,7,11
+
+  const scores = personalities.map(p => {
+    const tDiff = Math.abs(p.scores.temp - (tempA / 3 * 100));
+    const pDiff = Math.abs(p.scores.pace - (paceA / 3 * 100));
+    const cDiff = Math.abs(p.scores.conflict - (conflictA / 3 * 100));
+    const sDiff = Math.abs(p.scores.solitude - (solitudeA / 3 * 100));
+    return { id: p.id, score: -(tDiff + pDiff + cDiff + sDiff) };
+  });
+  scores.sort((a, b) => b.score - a.score);
+  return personalities[scores[0].id];
+}
+
+// ═══════════════════════════════════════════════════
+// RESULT
+// ═══════════════════════════════════════════════════
+function showResult(p) {
+  goTo('result');
+  const hero = document.getElementById('resultHero');
+  const eColor = ELEMENT_COLORS[p.element];
+  const eName = ELEMENT_NAMES[p.element];
+
+  hero.innerHTML = `
+    <div class="result-badge">${ZODIAC_ICONS[p.zodiacIdx]} ${p.zodiac} · ${eName}象</div>
+    <div class="result-name fade-in">${p.name}</div>
+    <div class="result-zodiac fade-in" style="animation-delay:.2s">守护星座：${p.zodiac} ${ZODIAC_ICONS[p.zodiacIdx]} · 能量星座：${p.energy}</div>
+    <div class="result-motto fade-in" style="animation-delay:.4s">"${p.motto}"</div>
+    <div class="result-element fade-in" style="animation-delay:.5s;background:${eColor}22;color:${eColor};border:1px solid ${eColor}44">${eName}象恋轨</div>
+  `;
+
+  drawRadar(p.scores);
+
+  // Tabs
+  const tabs = document.getElementById('resultTabs');
+  const tabData = [
+    {id:'strengths', label:'✨ 优势'},
+    {id:'blindspots', label:'🔮 盲区'},
+    {id:'growth', label:'🌱 成长'},
+    {id:'lovelang', label:'💝 爱语'}
+  ];
+  tabs.innerHTML = tabData.map((t, i) =>
+    `<div class="result-tab${i===0?' active':''}" onclick="switchTab('${t.id}',this)">${t.label}</div>`
+  ).join('');
+
+  // Tab content
+  const content = document.getElementById('resultContent');
+  let html = '';
+
+  // Strengths
+  html += `<div class="result-tab-content active" id="tab-strengths"><div class="result-section"><div class="result-section-title">你的恋爱超能力</div>`;
+  p.strengths.forEach(s => {
+    html += `<div class="result-card"><div class="result-card-title">${s.title}</div><div class="result-card-text">${s.desc}</div></div>`;
+  });
+  html += `</div></div>`;
+
+  // Blindspots
+  html += `<div class="result-tab-content" id="tab-blindspots"><div class="result-section"><div class="result-section-title">需要警惕的恋爱陷阱</div>`;
+  p.blindspots.forEach(s => {
+    html += `<div class="result-card"><div class="result-card-title">${s.title}</div><div class="result-card-text">${s.desc}</div></div>`;
+  });
+  html += `</div></div>`;
+
+  // Growth
+  html += `<div class="result-tab-content" id="tab-growth"><div class="result-section"><div class="result-section-title">成为更好恋人的4个建议</div>`;
+  p.growth.forEach((g, i) => {
+    html += `<div class="result-card"><div class="result-card-title">建议 ${i + 1}</div><div class="result-card-text">${g}</div></div>`;
+  });
+  html += `</div></div>`;
+
+  // Love language
+  html += `<div class="result-tab-content" id="tab-lovelang"><div class="result-section"><div class="result-section-title">你的恋爱语言</div>`;
+  html += `<div class="result-card"><div class="result-card-text">${p.loveLang}</div></div>`;
+  html += `</div></div>`;
+
+  content.innerHTML = html;
+
+  // ─── Extended Detail Sections ───
+  // Remove previous details if exists
+  const prevDetails = document.getElementById('resultDetails');
+  if (prevDetails) prevDetails.remove();
+
+  let detailHTML = '';
+
+  // Timeline
+  detailHTML += `<div class="result-divider"></div>`;
+  detailHTML += `<div class="result-detail-section"><div class="result-detail-title">⏳ 恋爱时间线</div><div class="result-timeline">`;
+  p.timeline.forEach(t => {
+    detailHTML += `<div class="result-timeline-item"><div class="result-timeline-label">${t.label}</div><div class="result-timeline-text">${t.text}</div></div>`;
+  });
+  detailHTML += `</div></div>`;
+
+  // Daily Scenes
+  detailHTML += `<div class="result-divider"></div>`;
+  detailHTML += `<div class="result-detail-section"><div class="result-detail-title">🎬 恋爱日常场景</div>`;
+  p.scenes.forEach(s => {
+    detailHTML += `<div class="result-scene"><div class="result-scene-icon">${s.icon}</div><div class="result-scene-content"><div class="result-scene-title">${s.title}</div><div class="result-scene-text">${s.text}</div><div class="result-scene-dialog">${s.dialog}</div></div></div>`;
+  });
+  detailHTML += `</div>`;
+
+  // Minefields
+  detailHTML += `<div class="result-divider"></div>`;
+  detailHTML += `<div class="result-detail-section"><div class="result-detail-title">💣 恋爱雷区警告</div>`;
+  p.minefields.forEach(m => {
+    detailHTML += `<div class="result-minefield"><div class="result-minefield-icon">${m.icon}</div><div class="result-minefield-text">${m.text}</div></div>`;
+  });
+  detailHTML += `</div>`;
+
+  // Ideal Date
+  detailHTML += `<div class="result-divider"></div>`;
+  detailHTML += `<div class="result-detail-section"><div class="result-detail-title">💝 理想约会方案</div><div class="result-date-card"><div class="result-date-title">${p.idealDate.title}</div><div class="result-date-text">${p.idealDate.desc}</div></div></div>`;
+
+  // Song
+  detailHTML += `<div class="result-divider"></div>`;
+  detailHTML += `<div class="result-detail-section"><div class="result-detail-title">🎵 代表歌曲</div><div class="result-song"><div class="result-song-icon">🎶</div><div class="result-song-info"><div class="result-song-name">${p.song.name}</div><div class="result-song-artist">${p.song.artist}</div><div class="result-song-reason">${p.song.reason}</div></div></div></div>`;
+
+  // Partner Guide
+  detailHTML += `<div class="result-divider"></div>`;
+  detailHTML += `<div class="result-detail-section"><div class="result-detail-title">📖 给伴侣的相处指南</div>`;
+  p.partnerGuide.forEach(g => {
+    detailHTML += `<div class="result-guide-card"><div class="result-guide-title">${g.title}</div><div class="result-guide-text">${g.text}</div></div>`;
+  });
+  detailHTML += `</div>`;
+
+  // Insert detail sections before the fun section
+  const funEl = document.getElementById('resultFun');
+  const detailDiv = document.createElement('div');
+  detailDiv.id = 'resultDetails';
+  detailDiv.innerHTML = detailHTML;
+  funEl.parentNode.insertBefore(detailDiv, funEl);
+
+  // Fun section
+  document.getElementById('resultFun').innerHTML = `
+    <div class="result-fun-title">🧪 人格配方</div>
+    <div class="result-fun-recipe">${p.recipe}</div>
+    <div style="margin-top:14px;font-size:13px;color:rgba(255,255,255,.5);font-style:italic">"${p.mantra}"</div>
+  `;
+
+  // Match section
+  const match = p.match;
+  document.getElementById('resultMatch').innerHTML = `
+    <div style="font-size:15px;font-weight:700;color:rgba(255,255,255,.8);margin-bottom:14px">💫 恋轨配对</div>
+    <div class="result-match-item">
+      <div class="result-match-icon" style="background:rgba(108,92,231,.15)">💜</div>
+      <div class="result-match-info">
+        <div class="result-match-label">最佳配对</div>
+        <div class="result-match-name">${match.best.name}</div>
+        <div class="result-match-desc">${match.best.desc}</div>
+      </div>
+      <div class="result-match-score" style="color:var(--purple)">${match.best.score}%</div>
+    </div>
+    <div class="result-match-item">
+      <div class="result-match-icon" style="background:rgba(253,203,110,.15)">✨</div>
+      <div class="result-match-info">
+        <div class="result-match-label">隐藏CP</div>
+        <div class="result-match-name">${match.secret.name}</div>
+        <div class="result-match-desc">${match.secret.desc}</div>
+      </div>
+      <div class="result-match-score" style="color:var(--gold)">${match.secret.score}%</div>
+    </div>
+    <div class="result-match-item">
+      <div class="result-match-icon" style="background:rgba(255,107,107,.15)">⚡</div>
+      <div class="result-match-info">
+        <div class="result-match-label">挑战配对</div>
+        <div class="result-match-name">${match.challenge.name}</div>
+        <div class="result-match-desc">${match.challenge.desc}</div>
+      </div>
+      <div class="result-match-score" style="color:var(--fire)">${match.challenge.score}%</div>
+    </div>
+    <div class="result-card" style="margin-top:10px;border-color:rgba(253,121,168,.15);background:rgba(253,121,168,.05)">
+      <div class="result-card-title">🌙 隐藏人格面</div>
+      <div class="result-card-text">${p.hidden}</div>
+    </div>
+    <div class="result-card" style="border-color:rgba(253,203,110,.15);background:rgba(253,203,110,.05)">
+      <div class="result-card-title">📅 本月星轨运势</div>
+      <div class="result-card-text">${p.season}</div>
+    </div>
+  `;
+
+  document.getElementById('result').scrollTop = 0;
+}
+
+function switchTab(tabId, el) {
+  document.querySelectorAll('.result-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.result-tab-content').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + tabId).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════
+// RADAR CHART
+// ═══════════════════════════════════════════════════
+function drawRadar(scores) {
+  const canvas = document.getElementById('radarCanvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = 280 * dpr;
+  canvas.height = 280 * dpr;
+  ctx.scale(dpr, dpr);
+
+  const cx = 140, cy = 140, r = 100;
+  const labels = ['情感温度', '关系节奏', '冲突模式', '独处需求'];
+  const values = [scores.temp / 100, scores.pace / 100, scores.conflict / 100, scores.solitude / 100];
+  const n = 4;
+
+  ctx.clearRect(0, 0, 280, 280);
+
+  // Grid
+  for (let ring = 1; ring <= 4; ring++) {
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+      const x = cx + Math.cos(angle) * r * ring / 4;
+      const y = cy + Math.sin(angle) * r * ring / 4;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(255,255,255,.08)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Axes
+  for (let i = 0; i < n; i++) {
+    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
+    ctx.strokeStyle = 'rgba(255,255,255,.1)';
+    ctx.stroke();
+  }
+
+  // Data area
+  ctx.beginPath();
+  for (let i = 0; i <= n; i++) {
+    const idx = i % n;
+    const angle = (Math.PI * 2 * idx / n) - Math.PI / 2;
+    const x = cx + Math.cos(angle) * r * values[idx];
+    const y = cy + Math.sin(angle) * r * values[idx];
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
+  grad.addColorStop(0, 'rgba(108,92,231,0.3)');
+  grad.addColorStop(1, 'rgba(253,121,168,0.3)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(108,92,231,0.8)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Data points
+  for (let i = 0; i < n; i++) {
+    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+    const x = cx + Math.cos(angle) * r * values[i];
+    const y = cy + Math.sin(angle) * r * values[i];
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x, y, 2, 0, Math.PI * 2);
+    ctx.fillStyle = '#6C5CE7';
+    ctx.fill();
+  }
+
+  // Labels
+  ctx.font = '11px PingFang SC, Microsoft YaHei';
+  ctx.fillStyle = 'rgba(255,255,255,.5)';
+  ctx.textAlign = 'center';
+  const labelOffsets = [
+    {dx: 0, dy: -14},
+    {dx: 0, dy: 20},
+    {dx: -50, dy: 8},
+    {dx: 50, dy: 8}
+  ];
+  labels.forEach((label, i) => {
+    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+    const lx = cx + Math.cos(angle) * (r + 20) + (labelOffsets[i]?.dx || 0);
+    const ly = cy + Math.sin(angle) * (r + 20) + (labelOffsets[i]?.dy || 0);
+    ctx.fillText(label, lx, ly);
+    // Score
+    ctx.font = '9px PingFang SC, Microsoft YaHei';
+    ctx.fillStyle = 'rgba(253,121,168,0.8)';
+    ctx.fillText(Math.round(values[i] * 100), lx, ly + 14);
+    ctx.font = '11px PingFang SC, Microsoft YaHei';
+    ctx.fillStyle = 'rgba(255,255,255,.5)';
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// SHARE
+// ═══════════════════════════════════════════════════
+let currentResult = null;
+
+function shareResult() {
+  currentResult = calculateResult();
+  const p = personalities[currentResult.id];
+  document.getElementById('sharePersonality').innerHTML =
+    '<div class="sp-name">' + p.name + '</div><div class="sp-zodiac">' + p.zodiac + ' · ' + p.motto + '</div>';
+  document.getElementById('shareModal').classList.add('show');
+}
+
+function closeShareModal() {
+  document.getElementById('shareModal').classList.remove('show');
+}
+
+function shareByLink() {
+  closeShareModal();
+  const p = personalities[currentResult.id];
+  const text = '我在「恋星图鉴」测出了我的恋爱人格——' + p.name + '（' + p.zodiac + '），快来测测你是哪种！' + window.location.href;
+  if (navigator.share) {
+    navigator.share({title: '我是' + p.name, text: text, url: window.location.href}).catch(() => {
+      copyShareText(text);
+    });
+  } else {
+    copyShareText(text);
+  }
+}
+
+function copyShareText(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showShareToast('✅ 链接已复制，快去分享吧！');
+    }).catch(() => {
+      fallbackCopy(text);
+    });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    showShareToast('✅ 链接已复制，快去分享吧！');
+  } catch(e) {
+    showShareToast('请手动复制页面链接分享');
+  }
+  document.body.removeChild(ta);
+}
+
+function showShareToast(msg) {
+  let toast = document.getElementById('shareToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'shareToast';
+    toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.8);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:999;pointer-events:none;transition:opacity .3s ease';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+}
+
+function shareByQR() {
+  closeShareModal();
+  const p = personalities[currentResult.id];
+  const url = window.location.href;
+
+  // Create QR modal
+  let qrModal = document.getElementById('qrModal');
+  if (!qrModal) {
+    qrModal = document.createElement('div');
+    qrModal.id = 'qrModal';
+    qrModal.className = 'qr-modal';
+    qrModal.onclick = function(e) { if (e.target === qrModal) closeQRModal(); };
+    document.body.appendChild(qrModal);
+  }
+
+  qrModal.innerHTML = '<div class="qr-card">' +
+    '<div class="qr-card-header">' +
+      '<div class="qr-card-app">恋星图鉴 · Love Constellation</div>' +
+      '<div class="qr-card-personality">' + p.name + '</div>' +
+      '<div class="qr-card-zodiac">' + p.zodiac + ' · ' + ELEMENT_NAMES[p.element] + '象</div>' +
+    '</div>' +
+    '<canvas id="qrCanvas" class="qr-card-canvas" width="200" height="200"></canvas>' +
+    '<div class="qr-card-tip">长按或截图保存二维码<br>分享给好友一起测</div>' +
+    '<div class="qr-card-actions">' +
+      '<button class="qr-btn-save" onclick="saveQRCard()">💾 保存图片</button>' +
+      '<button class="qr-btn-close-qr" onclick="closeQRModal()">关闭</button>' +
+    '</div>' +
+  '</div>';
+
+  qrModal.classList.add('show');
+
+  // Generate QR code using canvas
+  setTimeout(() => generateQRCode(url, 'qrCanvas'), 100);
+}
+
+function generateQRCode(text, canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const size = 200;
+  const modules = 25;
+  const cellSize = size / modules;
+
+  // Simple QR-like pattern generator (visual representation)
+  // For a real QR code, we'll create a deterministic pattern from the URL
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, size, size);
+
+  // Generate a hash from the URL for deterministic pattern
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) {
+    hash = ((hash << 5) - hash) + text.charCodeAt(i);
+    hash |= 0;
+  }
+
+  // Draw finder patterns (3 corners)
+  function drawFinder(x, y) {
+    const s = cellSize;
+    ctx.fillStyle = '#2D3436';
+    ctx.fillRect(x * s, y * s, 7 * s, 7 * s);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect((x+1) * s, (y+1) * s, 5 * s, 5 * s);
+    ctx.fillStyle = '#2D3436';
+    ctx.fillRect((x+2) * s, (y+2) * s, 3 * s, 3 * s);
+  }
+  drawFinder(0, 0);
+  drawFinder(modules - 7, 0);
+  drawFinder(0, modules - 7);
+
+  // Fill data area with deterministic pattern
+  ctx.fillStyle = '#2D3436';
+  let seed = Math.abs(hash);
+  function pseudoRandom() {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    return seed / 0x7fffffff;
+  }
+
+  for (let row = 0; row < modules; row++) {
+    for (let col = 0; col < modules; col++) {
+      // Skip finder pattern areas
+      if ((row < 8 && col < 8) || (row < 8 && col > modules - 9) || (row > modules - 9 && col < 8)) continue;
+      if (pseudoRandom() > 0.55) {
+        ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+      }
+    }
+  }
+
+  // Add center logo
+  const logoSize = 36;
+  const logoX = (size - logoSize) / 2;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(size/2, size/2, logoSize/2 + 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#6C5CE7';
+  ctx.beginPath();
+  ctx.arc(size/2, size/2, logoSize/2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 16px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('恋', size/2, size/2);
+}
+
+function saveQRCard() {
+  const p = personalities[currentResult.id];
+  const qrCanvas = document.getElementById('qrCanvas');
+  if (!qrCanvas) return;
+
+  // Create a larger card canvas
+  const card = document.createElement('canvas');
+  const w = 400, h = 560;
+  card.width = w;
+  card.height = h;
+  const ctx = card.getContext('2d');
+
+  // Background gradient
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, '#0A0A1A');
+  grad.addColorStop(0.5, '#1a1040');
+  grad.addColorStop(1, '#2d1b69');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+
+  // Decorative circles
+  ctx.globalAlpha = 0.06;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(320, 80, 100, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(80, 480, 80, 0, Math.PI*2); ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // Title
+  ctx.fillStyle = 'rgba(255,255,255,.5)';
+  ctx.font = '14px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('恋星图鉴 · Love Constellation', w/2, 50);
+
+  // Personality name
+  ctx.font = 'bold 32px sans-serif';
+  const nameGrad = ctx.createLinearGradient(100, 70, 300, 100);
+  nameGrad.addColorStop(0, '#fff');
+  nameGrad.addColorStop(0.5, '#6C5CE7');
+  nameGrad.addColorStop(1, '#FD79A8');
+  ctx.fillStyle = nameGrad;
+  ctx.fillText(p.name, w/2, 100);
+
+  // Zodiac
+  ctx.fillStyle = '#FDCB6E';
+  ctx.font = '16px sans-serif';
+  ctx.fillText(p.zodiac + ' · ' + ELEMENT_NAMES[p.element] + '象', w/2, 130);
+
+  // Motto
+  ctx.fillStyle = 'rgba(255,255,255,.45)';
+  ctx.font = '12px sans-serif';
+  ctx.fillText(p.motto, w/2, 160);
+
+  // Divider
+  ctx.strokeStyle = 'rgba(255,255,255,.1)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(60, 180); ctx.lineTo(340, 180); ctx.stroke();
+
+  // QR Code
+  const qrSize = 180;
+  const qrX = (w - qrSize) / 2;
+  const qrY = 200;
+
+  // QR white background with rounded corners
+  ctx.fillStyle = '#fff';
+  roundRect(ctx, qrX - 10, qrY - 10, qrSize + 20, qrSize + 20, 16);
+  ctx.fill();
+
+  // Draw QR from existing canvas
+  ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+
+  // Bottom text
+  ctx.fillStyle = 'rgba(255,255,255,.4)';
+  ctx.font = '12px sans-serif';
+  ctx.fillText('扫码发现你的恋爱人格', w/2, 430);
+
+  // Stars decoration
+  ctx.fillStyle = 'rgba(255,255,255,.15)';
+  ctx.font = '10px sans-serif';
+  ctx.fillText('✦  ✦  ✦', w/2, 460);
+
+  // URL at bottom
+  ctx.fillStyle = 'rgba(255,255,255,.25)';
+  ctx.font = '10px sans-serif';
+  const displayUrl = window.location.href.length > 40 ? window.location.href.substring(0, 40) + '...' : window.location.href;
+  ctx.fillText(displayUrl, w/2, 490);
+
+  // Save
+  try {
+    const link = document.createElement('a');
+    link.download = '恋星图鉴_' + p.name + '.png';
+    link.href = card.toDataURL('image/png');
+    link.click();
+    showShareToast('✅ 二维码名片已保存！');
+  } catch(e) {
+    showShareToast('长按二维码图片保存');
+  }
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function closeQRModal() {
+  const m = document.getElementById('qrModal');
+  if (m) m.classList.remove('show');
+}
+
+// ═══════════════════════════════════════════════════
+// SPLASH AUTO-ADVANCE
+// ═══════════════════════════════════════════════════
+setTimeout(() => {
+  if (currentPage === 'splash') goTo('home');
+}, 2500);
+
+// Counter animation
+function animateCounter() {
+  const el = document.getElementById('counter');
+  if (!el) return;
+  const target = 128936;
+  let current = 0;
+  const step = Math.ceil(target / 60);
+  const timer = setInterval(() => {
+    current += step;
+    if (current >= target) { current = target; clearInterval(timer); }
+    el.textContent = current.toLocaleString();
+  }, 30);
+}
+setTimeout(animateCounter, 1500);
+</script>
+</body>
+</html>
